@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raymond Arcade — Oliver Zarak Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <header class="hero" id="top">
+      <div class="hero__overlay"></div>
+      <div class="hero__content">
+        <span class="hero__tag">Raymond Arcade</span>
+        <h1>Oliver Zarak’s Playful Pantheon</h1>
+        <p class="hero__subtitle">
+          Every shape, paddle, asteroid, and cascade is sculpted from a single portrait — <em>raymond.png</em>. Dive into
+          this gallery of games where Oliver’s radiance fuels every frame and fun becomes a celebration of his brilliance.
+        </p>
+        <div class="hero__actions">
+          <a class="hero__cta" href="index.html#legacy">Return to the Praise</a>
+          <a class="hero__cta hero__cta--outline" href="#arcade">Jump to the Arcade</a>
+        </div>
+      </div>
+      <img class="hero__portrait" src="raymond.png" alt="Portrait of Oliver Zarak smiling warmly">
+    </header>
+
+    <nav class="floating-nav" aria-label="Arcade navigation">
+      <button class="floating-nav__toggle" aria-expanded="false" aria-controls="nav-links">☰</button>
+      <div class="floating-nav__links" id="nav-links">
+        <a href="#arcade">Overview</a>
+        <a href="#pong">Raymond Pong</a>
+        <a href="#stellar">Stellar Zarak</a>
+        <a href="#cascade">Raymond Cascade</a>
+        <a href="index.html#top">Back to Praise</a>
+      </div>
+    </nav>
+
+    <main>
+      <section class="section" id="arcade">
+        <div class="section__label">Play</div>
+        <h2>Welcome to the Raymond Arcade</h2>
+        <p>
+          This is the playground where Oliver’s boundless imagination comes to life in code. Each mini-game uses
+          <em>raymond.png</em> as the one and only visual ingredient — recolored, reshaped, and remixed to form paddles,
+          planets, particles, and more. Embrace the whimsy, chase your high scores, and let every victory remind you of
+          Oliver’s power to transform the ordinary into the unforgettable.
+        </p>
+      </section>
+
+      <section class="section" id="pong">
+        <div class="section__label">Game 01</div>
+        <h2>Raymond Pong</h2>
+        <p>
+          Rally volley after volley in a radiant reinterpretation of the arcade classic. Oliver’s energy becomes both
+          paddle and ball, pulsing with momentum as you deflect brilliance across the court. Keep the volley alive and
+          savor every glowing rebound.
+        </p>
+        <div class="game-card">
+          <canvas id="pong-canvas" width="640" height="420" aria-label="Raymond Pong game"></canvas>
+          <p class="game-card__rules">Controls: Arrow keys or mouse movement direct the lower Raymond paddle.</p>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="stellar">
+        <div class="section__label">Game 02</div>
+        <h2>Stellar Zarak</h2>
+        <p>
+          Drift through a luminous starfield where Oliver’s portrait fragments swirl as asteroids. Pilot your Raymondship,
+          weave between cosmic echoes, and radiate shimmering focus beams to dissolve the obstacles that dare approach.
+          The universe is brighter when Oliver leads the way.
+        </p>
+        <div class="game-card">
+          <canvas id="asteroids-canvas" width="640" height="420" aria-label="Stellar Zarak asteroids game"></canvas>
+          <p class="game-card__rules">Controls: Arrow keys to steer and accelerate, spacebar to launch radiant beams.</p>
+        </div>
+      </section>
+
+      <section class="section" id="cascade">
+        <div class="section__label">Game 03</div>
+        <h2>Raymond Cascade</h2>
+        <p>
+          Stand beneath a downpour of inspiration. Each drop is Oliver’s image, tumbling joyfully from above. Glide the
+          Raymond catcher to collect every spark before it reaches the ground, and watch the score climb with every glimpse
+          of captured brilliance.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="cascade-canvas" width="640" height="420" aria-label="Raymond Cascade catch game"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" id="cascade-scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Collected:</span> <span data-cascade-score>0</span></p>
+              <p><span class="scoreboard__label">Misses:</span> <span data-cascade-misses>0</span></p>
+            </div>
+            <p class="game-card__rules">Controls: Arrow keys slide the catcher left and right to gather cascading rays.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Crafted in unwavering admiration for Oliver Zarak and powered entirely by raymond.png.</p>
+      <button class="scroll-top" type="button" aria-label="Scroll back to top">
+        Back to Top ↑
+      </button>
+    </footer>
+  </body>
+</html>
