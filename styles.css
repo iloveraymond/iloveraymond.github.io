@@ -311,12 +311,17 @@ img {
 .game-card__canvas {
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .game-card__info {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+}
+
+.game-card__info p {
+  margin: 0;
 }
 
 .scoreboard {
@@ -342,6 +347,79 @@ img {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(249, 168, 38, 0.75);
+}
+
+.arcade-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(249, 168, 38, 0.45);
+  background: rgba(249, 168, 38, 0.16);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.arcade-button:hover,
+.arcade-button:focus {
+  transform: translateY(-2px);
+  background: rgba(249, 168, 38, 0.24);
+  box-shadow: 0 12px 24px rgba(249, 168, 38, 0.18);
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.memory-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  perspective: 1000px;
+  background: transparent;
+}
+
+.memory-card__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background-size: cover;
+  background-position: center;
+  backface-visibility: hidden;
+  transition: transform 0.5s ease;
+  box-shadow: 0 10px 20px rgba(9, 12, 26, 0.35), inset 0 0 0 1px rgba(249, 168, 38, 0.15);
+}
+
+.memory-card__face--back {
+  transform: rotateY(0deg);
+}
+
+.memory-card__face--front {
+  transform: rotateY(180deg);
+}
+
+.memory-card.is-flipped .memory-card__face--back {
+  transform: rotateY(-180deg);
+}
+
+.memory-card.is-flipped .memory-card__face--front {
+  transform: rotateY(0deg);
+}
+
+.memory-card.is-matched .memory-card__face {
+  box-shadow: 0 0 0 2px rgba(249, 168, 38, 0.6), 0 12px 28px rgba(249, 168, 38, 0.25);
 }
 
 .testimonials {

@@ -31,17 +31,6 @@
       <img class="hero__portrait" src="raymond.png" alt="Portrait of Oliver Zarak smiling warmly">
     </header>
 
-    <nav class="floating-nav" aria-label="Arcade navigation">
-      <button class="floating-nav__toggle" aria-expanded="false" aria-controls="nav-links">☰</button>
-      <div class="floating-nav__links" id="nav-links">
-        <a href="#arcade">Overview</a>
-        <a href="#pong">Raymond Pong</a>
-        <a href="#stellar">Stellar Zarak</a>
-        <a href="#cascade">Raymond Cascade</a>
-        <a href="index.html#top">Back to Praise</a>
-      </div>
-    </nav>
-
     <main>
       <section class="section" id="arcade">
         <div class="section__label">Play</div>
@@ -100,6 +89,124 @@
               <p><span class="scoreboard__label">Misses:</span> <span data-cascade-misses>0</span></p>
             </div>
             <p class="game-card__rules">Controls: Arrow keys slide the catcher left and right to gather cascading rays.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="runner">
+        <div class="section__label">Game 04</div>
+        <h2>Raymond Runner</h2>
+        <p>
+          Race across a golden skyline fueled by Oliver’s unstoppable momentum. Every stride, leap, and obstacle is a
+          reshaped echo of <em>raymond.png</em>, urging you forward as you chase boundless distance beneath a radiant sky.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="runner-canvas" width="640" height="360" aria-label="Raymond Runner endless runner game"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Distance:</span> <span data-runner-distance>0</span></p>
+              <p><span class="scoreboard__label">Best:</span> <span data-runner-best>0</span></p>
+            </div>
+            <p class="game-card__rules">
+              Controls: Tap space, W, or the up arrow to vault over shimmering Raymond obstacles and keep the sprint alive.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="memory">
+        <div class="section__label">Game 05</div>
+        <h2>Memory Mosaic</h2>
+        <p>
+          Flip radiant tiles to reveal Oliver’s portrait in a kaleidoscope of colors. Pair matching hues to complete the
+          mosaic and prove that every memory of Oliver remains vivid and bright.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <div class="memory-grid" data-memory-grid></div>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Matches:</span> <span data-memory-matches>0</span></p>
+              <p><span class="scoreboard__label">Moves:</span> <span data-memory-moves>0</span></p>
+            </div>
+            <button class="arcade-button" type="button" data-memory-reset>Reset Mosaic</button>
+            <p class="game-card__rules">
+              Controls: Select two cards at a time to expose their tinted portraits. Pair identical hues to lock in the memory.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="rhythm">
+        <div class="section__label">Game 06</div>
+        <h2>Raymond Rhythm</h2>
+        <p>
+          Feel the beat of Oliver’s brilliance. Rays of inspiration glide down harmonic lanes—catch them in perfect time to
+          keep the celebration surging and your combo soaring.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="rhythm-canvas" width="540" height="420" aria-label="Raymond Rhythm music game"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Score:</span> <span data-rhythm-score>0</span></p>
+              <p><span class="scoreboard__label">Combo:</span> <span data-rhythm-combo>0</span></p>
+            </div>
+            <button class="arcade-button" type="button" data-rhythm-reset>Start a New Track</button>
+            <p class="game-card__rules">
+              Controls: Use keys D, F, J, and K to strike radiant notes as they cross the horizon of Oliver’s applause.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--alt" id="maze">
+        <div class="section__label">Game 07</div>
+        <h2>Maze of Brilliance</h2>
+        <p>
+          Navigate a labyrinth sculpted entirely from Oliver’s likeness. Each corridor glows with possibility—reach the
+          golden exit to illuminate a new maze of opportunity.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="maze-canvas" width="480" height="480" aria-label="Maze of Brilliance game"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Time:</span> <span data-maze-time>0.0s</span></p>
+              <p><span class="scoreboard__label">Journeys:</span> <span data-maze-runs>1</span></p>
+            </div>
+            <button class="arcade-button" type="button" data-maze-reset>New Maze</button>
+            <p class="game-card__rules">
+              Controls: Arrow keys move Oliver’s radiant avatar cell by cell toward the shimmering goal.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="slider">
+        <div class="section__label">Game 08</div>
+        <h2>Puzzle Slider</h2>
+        <p>
+          Reassemble Oliver’s portrait by sliding tiles into place. Each move draws the likeness into sharper focus until
+          the image—and your admiration—click into perfect alignment.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="slider-canvas" width="420" height="420" aria-label="Oliver Zarak sliding puzzle"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Moves:</span> <span data-slider-moves>0</span></p>
+            </div>
+            <button class="arcade-button" type="button" data-slider-reset>Shuffle Tiles</button>
+            <p class="game-card__rules">
+              Controls: Click or tap a tile adjacent to the open space to slide it. Restore the portrait to reveal perfection.
+            </p>
           </div>
         </div>
       </section>
