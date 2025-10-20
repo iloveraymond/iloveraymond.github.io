@@ -1927,7 +1927,7 @@ if (arcadeCanvases.length > 0) {
 
     let stageNumber = 1;
     let launches = 0;
-    let staticModeEnabled = false;
+    let staticModeEnabled = true;
     let activePlanet = null;
     let dragOffset = { x: 0, y: 0 };
     let comet = null;
@@ -1941,7 +1941,7 @@ if (arcadeCanvases.length > 0) {
     }
 
     if (staticToggleButton) {
-      staticToggleButton.textContent = "Static Mode: Off";
+      staticToggleButton.textContent = "Static Mode: On";
       staticToggleButton.addEventListener("click", () => {
         staticModeEnabled = !staticModeEnabled;
         staticToggleButton.textContent = staticModeEnabled ? "Static Mode: On" : "Static Mode: Off";
