@@ -52,7 +52,12 @@
           savor every glowing rebound.
         </p>
         <div class="game-card">
-          <canvas id="pong-canvas" width="640" height="420" aria-label="Raymond Pong game"></canvas>
+          <div class="game-card__canvas">
+            <div class="game-canvas-frame">
+              <canvas id="pong-canvas" width="640" height="420" aria-label="Raymond Pong game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="pong">Play Raymond Pong</button>
+            </div>
+          </div>
           <p class="game-card__rules">Controls: Arrow keys or mouse movement direct the lower Raymond paddle.</p>
         </div>
       </section>
@@ -66,7 +71,12 @@
           The universe is brighter when Oliver leads the way.
         </p>
         <div class="game-card">
-          <canvas id="asteroids-canvas" width="640" height="420" aria-label="Stellar Zarak asteroids game"></canvas>
+          <div class="game-card__canvas">
+            <div class="game-canvas-frame">
+              <canvas id="asteroids-canvas" width="640" height="420" aria-label="Stellar Zarak asteroids game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="stellar">Play Stellar Zarak</button>
+            </div>
+          </div>
           <p class="game-card__rules">Controls: Arrow keys to steer and accelerate, spacebar to launch radiant beams.</p>
         </div>
       </section>
@@ -81,7 +91,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="cascade-canvas" width="640" height="420" aria-label="Raymond Cascade catch game"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="cascade-canvas" width="640" height="420" aria-label="Raymond Cascade catch game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="cascade">Play Raymond Cascade</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" id="cascade-scoreboard" aria-live="polite">
@@ -102,7 +115,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="runner-canvas" width="640" height="360" aria-label="Raymond Runner endless runner game"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="runner-canvas" width="640" height="360" aria-label="Raymond Runner endless runner game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="runner">Play Raymond Runner</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -125,7 +141,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <div class="memory-grid" data-memory-grid></div>
+            <div class="game-canvas-frame">
+              <div class="memory-grid" data-memory-grid></div>
+              <button class="arcade-button game-launcher" type="button" data-game-start="memory">Play Memory Mosaic</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -149,7 +168,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="rhythm-canvas" width="540" height="420" aria-label="Raymond Rhythm music game"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="rhythm-canvas" width="540" height="420" aria-label="Raymond Rhythm music game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="rhythm">Play Raymond Rhythm</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -173,7 +195,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="maze-canvas" width="480" height="480" aria-label="Maze of Brilliance game"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="maze-canvas" width="480" height="480" aria-label="Maze of Brilliance game"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="maze">Play Maze of Brilliance</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -197,7 +222,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="slider-canvas" width="420" height="420" aria-label="Oliver Zarak sliding puzzle"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="slider-canvas" width="420" height="420" aria-label="Oliver Zarak sliding puzzle"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="slider">Play Puzzle Slider</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -221,7 +249,10 @@
         </p>
         <div class="game-card game-card--split">
           <div class="game-card__canvas">
-            <canvas id="rogue-canvas" width="480" height="480" aria-label="Radiant roguelike adventure"></canvas>
+            <div class="game-canvas-frame">
+              <canvas id="rogue-canvas" width="480" height="480" aria-label="Radiant roguelike adventure"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="roguelike">Play Radiant Roguelike</button>
+            </div>
           </div>
           <div class="game-card__info">
             <div class="scoreboard" aria-live="polite">
@@ -247,7 +278,10 @@
           the orbits mid-flight, harness gravity, and let Oliver’s ingenuity guide every stage of this infinite run.
         </p>
         <div class="game-card orbit-card">
-          <canvas id="orbit-canvas" width="1440" height="810" aria-label="Oliver's Orbit gravity puzzle"></canvas>
+          <div class="game-canvas-frame orbit-canvas-frame">
+            <canvas id="orbit-canvas" width="1440" height="810" aria-label="Oliver's Orbit gravity puzzle"></canvas>
+            <button class="arcade-button game-launcher" type="button" data-game-start="orbit">Play Oliver’s Orbit</button>
+          </div>
           <div class="orbit-slider-bar">
             <label class="orbit-slider">
               Launch Speed
@@ -261,6 +295,14 @@
               <p><span class="scoreboard__label">Goals:</span> <span data-orbit-goals>0</span></p>
             </div>
             <button class="arcade-button" type="button" data-orbit-static-toggle>Static Mode: Off</button>
+            <label class="orbit-stage-select">Start Stage
+              <select data-orbit-stage-select></select>
+            </label>
+            <div class="orbit-state-controls">
+              <button class="arcade-button" type="button" data-orbit-export>Download Layout</button>
+              <button class="arcade-button" type="button" data-orbit-import>Load Layout</button>
+              <input type="file" accept=".txt,application/json" data-orbit-import-input hidden>
+            </div>
             <p class="scoreboard__message" data-orbit-message>Position the planets, then press space to launch.</p>
             <p class="game-card__rules">
               Controls: Drag planets to reposition them. Tap the space bar to launch the comet; collect every radiant

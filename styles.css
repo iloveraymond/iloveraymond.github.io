@@ -327,15 +327,37 @@ img {
   margin-top: 0;
 }
 
-.orbit-slider {
+.orbit-stage-select {
   display: grid;
   gap: 0.4rem;
   font-size: 0.85rem;
   color: rgba(204, 214, 246, 0.85);
 }
 
+.orbit-stage-select select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(249, 168, 38, 0.35);
+  background: rgba(9, 12, 26, 0.9);
+  color: rgba(204, 214, 246, 0.95);
+}
+
+.orbit-state-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+}
+
+.orbit-slider {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(204, 214, 246, 0.85);
+  width: 100%;
+}
+
 .orbit-slider input[type="range"] {
-  width: min(480px, 100%);
+  width: 100%;
   accent-color: var(--highlight);
 }
 
@@ -348,6 +370,48 @@ img {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.game-canvas-frame {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-canvas-frame canvas,
+.game-canvas-frame .memory-grid {
+  width: min(100%, 1440px);
+}
+
+.game-launcher {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  white-space: normal;
+  text-align: center;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.game-launcher.game-launcher--running {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.game-launcher:hover,
+.game-launcher:focus {
+  transform: translate(-50%, -50%);
+  background: rgba(249, 168, 38, 0.24);
+  box-shadow: 0 12px 24px rgba(249, 168, 38, 0.18);
+}
+
+.orbit-canvas-frame {
+  max-width: 100%;
 }
 
 .game-card__info {
@@ -412,8 +476,8 @@ img {
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
-.arcade-button:hover,
-.arcade-button:focus {
+.arcade-button:not(.game-launcher):hover,
+.arcade-button:not(.game-launcher):focus {
   transform: translateY(-2px);
   background: rgba(249, 168, 38, 0.24);
   box-shadow: 0 12px 24px rgba(249, 168, 38, 0.18);

@@ -95,7 +95,64 @@ if (arcadeCanvases.length > 0) {
   raymondImage.src = "raymond.png";
 
   const tintedCache = new Map();
-  let gamesStarted = false;
+  const startedGames = new Set();
+  const gameInitializers = {
+    pong: startRaymondPong,
+    stellar: startStellarZarak,
+    cascade: startRaymondCascade,
+    runner: startRaymondRunner,
+    memory: startMemoryMosaic,
+    rhythm: startRaymondRhythm,
+    maze: startRaymondMaze,
+    slider: startRaymondSlider,
+    roguelike: startRaymondRoguelike,
+    orbit: startOliversOrbit,
+  };
+
+  function whenRaymondReady(callback) {
+    if (raymondImage.complete && raymondImage.naturalWidth > 0) {
+      callback();
+      return;
+    }
+    const handleLoad = () => {
+      raymondImage.removeEventListener("load", handleLoad);
+      callback();
+    };
+    raymondImage.addEventListener("load", handleLoad);
+  }
+
+  function setupGameLaunchers() {
+    const gameButtons = document.querySelectorAll("[data-game-start]");
+    gameButtons.forEach((button) => {
+      const gameId = button.getAttribute("data-game-start");
+      const initializer = gameId ? gameInitializers[gameId] : undefined;
+      if (!initializer) {
+        return;
+      }
+      const originalLabel = button.textContent?.trim() ?? "Play";
+      button.addEventListener("click", () => {
+        if (startedGames.has(gameId)) {
+          return;
+        }
+        button.disabled = true;
+        button.textContent = "Starting...";
+        whenRaymondReady(() => {
+          if (startedGames.has(gameId)) {
+            return;
+          }
+          initializer();
+          startedGames.add(gameId);
+          button.textContent = originalLabel;
+          button.classList.add("game-launcher--running");
+          button.setAttribute("aria-hidden", "true");
+          button.setAttribute("tabindex", "-1");
+          button.blur();
+        });
+      });
+    });
+  }
+
+  setupGameLaunchers();
 
   function enableHighQuality(ctx) {
     if (!ctx) {
@@ -269,28 +326,6 @@ if (arcadeCanvases.length > 0) {
     } catch (error) {
       return "";
     }
-  }
-
-  function startGames() {
-    if (gamesStarted) {
-      return;
-    }
-    gamesStarted = true;
-    startRaymondPong();
-    startStellarZarak();
-    startRaymondCascade();
-    startRaymondRunner();
-    startMemoryMosaic();
-    startRaymondRhythm();
-    startRaymondMaze();
-    startRaymondSlider();
-    startRaymondRoguelike();
-    startOliversOrbit();
-  }
-
-  raymondImage.addEventListener("load", startGames);
-  if (raymondImage.complete) {
-    startGames();
   }
 
   // Raymond Pong
@@ -1901,6 +1936,11 @@ if (arcadeCanvases.length > 0) {
     const goalsDisplay = document.querySelector("[data-orbit-goals]");
     const messageDisplay = document.querySelector("[data-orbit-message]");
     const staticToggleButton = document.querySelector("[data-orbit-static-toggle]");
+    const stageSelect = document.querySelector("[data-orbit-stage-select]");
+    const exportButton = document.querySelector("[data-orbit-export]");
+    const importButton = document.querySelector("[data-orbit-import]");
+    const importInput = document.querySelector("[data-orbit-import-input]");
+    const ORBIT_STORAGE_KEY = "oliversOrbitProgress";
 
     const width = canvas.width;
     canvas.style.width = "100%";
@@ -1916,6 +1956,23 @@ if (arcadeCanvases.length > 0) {
     const speedSlider = document.querySelector('[data-orbit-speed]');
     let baseLaunchSpeed = Number(speedSlider?.value) || 170;
     let maxSpeed = baseLaunchSpeed * 3;
+    const SLIDER_MIN = Number(speedSlider?.min ?? 100);
+    const SLIDER_MAX = Number(speedSlider?.max ?? 500);
+
+    function clamp(value, min, max) {
+      if (!Number.isFinite(value)) {
+        return min;
+      }
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function roundTo(value, decimals = 3) {
+      if (!Number.isFinite(value)) {
+        return 0;
+      }
+      const factor = 10 ** decimals;
+      return Math.round(value * factor) / factor;
+    }
 
     const planetSprite = getRaymondSprite("rgba(249,168,38,0.35)", 120, 120);
     const cometSprite = getRaymondSprite("rgba(255,255,255,0.78)", COMET_RADIUS * 2.4, COMET_RADIUS * 2.4);
@@ -1926,6 +1983,7 @@ if (arcadeCanvases.length > 0) {
     let originalGoals = [];
 
     let stageNumber = 1;
+    let highestStageUnlocked = 1;
     let launches = 0;
     let staticModeEnabled = true;
     let activePlanet = null;
@@ -1933,19 +1991,120 @@ if (arcadeCanvases.length > 0) {
     let comet = null;
     let lastSpacePressed = false;
 
+    const storedProgress = (() => {
+      try {
+        const raw = localStorage.getItem(ORBIT_STORAGE_KEY);
+        if (!raw) {
+          return null;
+        }
+        const parsed = JSON.parse(raw);
+        if (!Number.isFinite(parsed.stage) || !Number.isFinite(parsed.highestStage)) {
+          return null;
+        }
+        const stage = Math.max(1, Math.floor(parsed.stage));
+        const highest = Math.max(1, Math.floor(parsed.highestStage));
+        return {
+          stage: Math.min(stage, highest),
+          highest,
+          launchSpeed: Number.isFinite(parsed.launchSpeed) ? clamp(parsed.launchSpeed, SLIDER_MIN, SLIDER_MAX) : null,
+          staticMode: typeof parsed.staticMode === "boolean" ? parsed.staticMode : null,
+        };
+      } catch (error) {
+        return null;
+      }
+    })();
+
+    if (storedProgress) {
+      stageNumber = storedProgress.stage;
+      highestStageUnlocked = Math.max(storedProgress.highest, stageNumber);
+      if (storedProgress.launchSpeed !== null) {
+        baseLaunchSpeed = storedProgress.launchSpeed;
+        maxSpeed = baseLaunchSpeed * 3;
+      }
+      if (storedProgress.staticMode !== null) {
+        staticModeEnabled = storedProgress.staticMode;
+      }
+    }
+
+    if (speedSlider) {
+      speedSlider.value = String(baseLaunchSpeed);
+    }
+
     if (speedSlider) {
       speedSlider.addEventListener("input", () => {
-        baseLaunchSpeed = Number(speedSlider.value) || baseLaunchSpeed;
+        const newSpeed = clamp(Number(speedSlider.value), SLIDER_MIN, SLIDER_MAX);
+        baseLaunchSpeed = newSpeed;
         maxSpeed = baseLaunchSpeed * 3;
+        speedSlider.value = String(baseLaunchSpeed);
+        persistProgress();
       });
     }
 
+    refreshStaticToggleLabel();
+
     if (staticToggleButton) {
-      staticToggleButton.textContent = "Static Mode: On";
       staticToggleButton.addEventListener("click", () => {
         staticModeEnabled = !staticModeEnabled;
-        staticToggleButton.textContent = staticModeEnabled ? "Static Mode: On" : "Static Mode: Off";
+        refreshStaticToggleLabel();
         updateScoreboard(staticModeEnabled ? "Static mode enabled—planets lock once launched." : "Static mode disabled—mid-flight adjustments allowed.");
+        persistProgress();
+      });
+    }
+
+    syncStageSelect();
+
+    if (stageSelect) {
+      stageSelect.addEventListener("change", () => {
+        const selectedStage = Number(stageSelect.value);
+        if (!Number.isFinite(selectedStage) || selectedStage < 1) {
+          stageSelect.value = String(stageNumber);
+          return;
+        }
+        if (selectedStage === stageNumber) {
+          return;
+        }
+        startStage(selectedStage);
+        updateScoreboard(`Stage ${stageNumber}: restored from checkpoints.`);
+      });
+    }
+
+    if (exportButton) {
+      exportButton.addEventListener("click", () => {
+        try {
+          exportOrbitLayout();
+          updateScoreboard("Current layout downloaded—share the constellation!");
+        } catch (error) {
+          updateScoreboard("Unable to download layout—please try again.");
+        }
+      });
+    }
+
+    if (importButton && importInput) {
+      importButton.addEventListener("click", () => {
+        importInput.click();
+      });
+      importInput.addEventListener("change", () => {
+        const [file] = importInput.files ?? [];
+        if (!file) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          try {
+            const text = typeof reader.result === "string" ? reader.result : "";
+            const parsed = JSON.parse(text);
+            applyOrbitLayout(parsed);
+          } catch (error) {
+            updateScoreboard("Unable to load layout—check the file and try again.");
+          } finally {
+            importInput.value = "";
+          }
+        });
+        reader.onerror = () => {
+          updateScoreboard("Unable to read the selected file.");
+          importInput.value = "";
+        };
+        reader.readAsText(file);
       });
     }
 
@@ -1955,6 +2114,12 @@ if (arcadeCanvases.length > 0) {
 
     function randomPlanetMass(radius) {
       return 900 + radius * 45;
+    }
+
+    function refreshStaticToggleLabel() {
+      if (staticToggleButton) {
+        staticToggleButton.textContent = staticModeEnabled ? "Static Mode: On" : "Static Mode: Off";
+      }
     }
 
     function updateScoreboard(message) {
@@ -1970,6 +2135,132 @@ if (arcadeCanvases.length > 0) {
       if (message !== undefined && messageDisplay) {
         messageDisplay.textContent = message;
       }
+    }
+
+    function persistProgress() {
+      try {
+        const payload = JSON.stringify({
+          stage: stageNumber,
+          highestStage: highestStageUnlocked,
+          launchSpeed: baseLaunchSpeed,
+          staticMode: staticModeEnabled,
+        });
+        localStorage.setItem(ORBIT_STORAGE_KEY, payload);
+      } catch (error) {
+        // Ignore storage failures (private browsing, etc.)
+      }
+    }
+
+    function syncStageSelect() {
+      if (!stageSelect) {
+        return;
+      }
+      const targetHighest = Math.max(1, highestStageUnlocked);
+      const fragment = document.createDocumentFragment();
+      for (let optionStage = 1; optionStage <= targetHighest; optionStage += 1) {
+        const option = document.createElement("option");
+        option.value = String(optionStage);
+        option.textContent = `Stage ${optionStage}`;
+        fragment.appendChild(option);
+      }
+      stageSelect.innerHTML = "";
+      stageSelect.appendChild(fragment);
+      stageSelect.value = String(stageNumber);
+      stageSelect.disabled = targetHighest <= 1;
+    }
+
+    function captureOrbitLayout() {
+      return {
+        version: 1,
+        stage: stageNumber,
+        launchSpeed: roundTo(baseLaunchSpeed),
+        staticMode: staticModeEnabled,
+        planets: planets.map((planet) => ({
+          x: roundTo(planet.x),
+          y: roundTo(planet.y),
+          radius: roundTo(planet.radius),
+          mass: roundTo(planet.mass),
+        })),
+        goals: goals.map((goal) => ({
+          x: roundTo(goal.x),
+          y: roundTo(goal.y),
+          radius: roundTo(goal.radius),
+        })),
+      };
+    }
+
+    function exportOrbitLayout() {
+      const layout = captureOrbitLayout();
+      const serialized = `${JSON.stringify(layout, null, 2)}\n`;
+      const blob = new Blob([serialized], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `olivers-orbit-stage-${stageNumber}.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    }
+
+    function applyOrbitLayout(layout) {
+      if (!layout || !Array.isArray(layout.planets) || !Array.isArray(layout.goals)) {
+        throw new Error("Invalid layout payload.");
+      }
+
+      const layoutStage = Math.max(1, Math.floor(Number(layout.stage) || stageNumber));
+      const sanitizedPlanets = layout.planets.map((planet) => {
+        const x = Number(planet.x);
+        const y = Number(planet.y);
+        const radius = Number(planet.radius);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(radius) || radius <= 0) {
+          throw new Error("Invalid planet data.");
+        }
+        const mass = Number(planet.mass);
+        return {
+          x,
+          y,
+          radius,
+          mass: Number.isFinite(mass) && mass > 0 ? mass : randomPlanetMass(radius),
+        };
+      });
+
+      const sanitizedGoals = layout.goals.map((goal) => {
+        const x = Number(goal.x);
+        const y = Number(goal.y);
+        const radius = Number(goal.radius);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(radius) || radius <= 0) {
+          throw new Error("Invalid goal data.");
+        }
+        return { x, y, radius };
+      });
+
+      const importedSpeed = Number(layout.launchSpeed);
+      const resolvedSpeed = Number.isFinite(importedSpeed) ? clamp(importedSpeed, SLIDER_MIN, SLIDER_MAX) : baseLaunchSpeed;
+
+      stageNumber = layoutStage;
+      highestStageUnlocked = Math.max(highestStageUnlocked, stageNumber);
+      baseLaunchSpeed = resolvedSpeed;
+      maxSpeed = baseLaunchSpeed * 3;
+      if (speedSlider) {
+        speedSlider.value = String(baseLaunchSpeed);
+      }
+
+      if (typeof layout.staticMode === "boolean") {
+        staticModeEnabled = layout.staticMode;
+      }
+      refreshStaticToggleLabel();
+
+      planets.length = 0;
+      planets.push(...sanitizedPlanets);
+      goals.length = 0;
+      goals.push(...sanitizedGoals);
+      originalGoals = goals.map((goal) => ({ ...goal }));
+      launches = 0;
+      resetComet();
+      syncStageSelect();
+      persistProgress();
+      updateScoreboard(`Stage ${stageNumber}: custom layout loaded.`);
     }
 
     function isPlanetPlacementValid(x, y, radius, ignorePlanet) {
@@ -2079,7 +2370,8 @@ if (arcadeCanvases.length > 0) {
     }
 
     function startStage(targetStage) {
-      stageNumber = targetStage;
+      stageNumber = Math.max(1, Math.floor(targetStage));
+      highestStageUnlocked = Math.max(highestStageUnlocked, stageNumber);
       launches = 0;
       goals.length = 0;
       originalGoals = [];
@@ -2087,6 +2379,8 @@ if (arcadeCanvases.length > 0) {
       spawnGoals();
       resetComet();
       updateScoreboard(`Stage ${stageNumber}: collect ${goals.length} goal${goals.length === 1 ? '' : 's'}.`);
+      syncStageSelect();
+      persistProgress();
     }
 
     function advanceStage() {
