@@ -378,6 +378,8 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-medium);
+  overflow: hidden;
 }
 
 .game-canvas-frame canvas,
@@ -412,6 +414,82 @@ img {
 
 .orbit-canvas-frame {
   max-width: 100%;
+}
+
+.orbit-portal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.orbit-portal.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.orbit-portal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(12, 18, 44, 0.9),
+    rgba(58, 80, 107, 0.85),
+    rgba(249, 168, 38, 0.22)
+  );
+  border-radius: inherit;
+  backdrop-filter: blur(6px);
+  opacity: 0.92;
+}
+
+.orbit-portal__dialog {
+  position: relative;
+  z-index: 1;
+  max-width: min(90%, 520px);
+  padding: 2rem;
+  border-radius: var(--radius-medium);
+  background: rgba(9, 12, 26, 0.92);
+  border: 1px solid rgba(249, 168, 38, 0.4);
+  box-shadow: 0 18px 40px rgba(9, 12, 26, 0.55);
+  text-align: center;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.orbit-portal__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2vw, 1.7rem);
+  color: rgba(249, 168, 38, 0.92);
+  letter-spacing: 0.05em;
+}
+
+.orbit-portal__message {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(204, 214, 246, 0.92);
+}
+
+.orbit-portal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.arcade-button--primary {
+  background: rgba(249, 168, 38, 0.38);
+  border-color: rgba(249, 168, 38, 0.65);
+}
+
+.arcade-button--primary:hover,
+.arcade-button--primary:focus {
+  background: rgba(249, 168, 38, 0.5);
 }
 
 .game-card__info {

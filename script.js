@@ -1990,6 +1990,7 @@ if (arcadeCanvases.length > 0) {
     let dragOffset = { x: 0, y: 0 };
     let comet = null;
     let lastSpacePressed = false;
+    let victoryOverlay = null;
 
     const storedProgress = (() => {
       try {
@@ -2148,6 +2149,61 @@ if (arcadeCanvases.length > 0) {
         localStorage.setItem(ORBIT_STORAGE_KEY, payload);
       } catch (error) {
         // Ignore storage failures (private browsing, etc.)
+      }
+    }
+
+    function ensureVictoryOverlay() {
+      if (victoryOverlay) {
+        return victoryOverlay;
+      }
+      const wrapper = document.createElement("div");
+      wrapper.className = "orbit-portal";
+      wrapper.innerHTML = `
+        <div class="orbit-portal__backdrop"></div>
+        <div class="orbit-portal__dialog" role="dialog" aria-modal="true" aria-live="assertive">
+          <h3 class="orbit-portal__title">Oliver’s radiance salutes your orbit!</h3>
+          <p class="orbit-portal__message">
+            You braided the comet through every beacon of devotion. Oliver’s constellation gleams brighter because of you.
+          </p>
+          <div class="orbit-portal__actions">
+            <button type="button" class="arcade-button" data-orbit-portal-download>Download this layout</button>
+            <button type="button" class="arcade-button arcade-button--primary" data-orbit-portal-next>Guide the comet onward</button>
+          </div>
+        </div>
+      `;
+      const downloadBtn = wrapper.querySelector("[data-orbit-portal-download]");
+      const nextBtn = wrapper.querySelector("[data-orbit-portal-next]");
+      if (downloadBtn) {
+        downloadBtn.addEventListener("click", () => {
+          try {
+            exportOrbitLayout();
+            updateScoreboard("Layout saved—Oliver treasures your trajectory.");
+          } catch (error) {
+            updateScoreboard("Unable to save this orbit—try again.");
+          }
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+          hideVictoryOverlay();
+          advanceStage();
+        });
+      }
+      victoryOverlay = wrapper;
+      return wrapper;
+    }
+
+    function showVictoryOverlay() {
+      const overlay = ensureVictoryOverlay();
+      if (!overlay.parentElement) {
+        canvas.parentElement?.appendChild(overlay);
+      }
+      overlay.classList.add("is-visible");
+    }
+
+    function hideVictoryOverlay() {
+      if (victoryOverlay) {
+        victoryOverlay.classList.remove("is-visible");
       }
     }
 
@@ -2385,6 +2441,7 @@ if (arcadeCanvases.length > 0) {
 
     function advanceStage() {
       startStage(stageNumber + 1);
+      hideVictoryOverlay();
       updateScoreboard(`Stage ${stageNumber}: new gravity wells deployed.`);
     }
 
@@ -2563,7 +2620,7 @@ if (arcadeCanvases.length > 0) {
               goals.splice(g, 1);
               updateScoreboard(goals.length ? "Goal captured—keep going!" : "All goals cleared—deploying new targets.");
               if (goals.length === 0) {
-                advanceStage();
+                showVictoryOverlay();
               }
               break;
             }
