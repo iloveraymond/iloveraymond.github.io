@@ -238,6 +238,39 @@
           </div>
         </div>
       </section>
+
+      <section class="section" id="orbit">
+        <div class="section__label">Game 10</div>
+        <h2>Oliver’s Orbit</h2>
+        <p>
+          Arrange radiant planets so a comet carved from <em>raymond.png</em> threads a growing constellation of goals. Adjust
+          the orbits mid-flight, harness gravity, and let Oliver’s ingenuity guide every stage of this infinite run.
+        </p>
+        <div class="game-card orbit-card">
+          <canvas id="orbit-canvas" width="1440" height="810" aria-label="Oliver's Orbit gravity puzzle"></canvas>
+          <div class="orbit-slider-bar">
+            <label class="orbit-slider">
+              Launch Speed
+              <input type="range" min="100" max="500" value="170" data-orbit-speed>
+            </label>
+          </div>
+          <div class="orbit-hud" aria-live="polite">
+            <div class="orbit-metrics">
+              <p><span class="scoreboard__label">Stage:</span> <span data-orbit-stage>1</span></p>
+              <p><span class="scoreboard__label">Launches:</span> <span data-orbit-launches>0</span></p>
+              <p><span class="scoreboard__label">Goals:</span> <span data-orbit-goals>0</span></p>
+            </div>
+            <button class="arcade-button" type="button" data-orbit-static-toggle>Static Mode: Off</button>
+            <p class="scoreboard__message" data-orbit-message>Position the planets, then press space to launch.</p>
+            <p class="game-card__rules">
+              Controls: Drag planets to reposition them. Tap the space bar to launch the comet; collect every radiant
+              goal orb in sequence with a single run. Toggle static mode to prevent mid-flight adjustments if you prefer a
+              pure puzzle.
+            </p>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <footer class="site-footer">

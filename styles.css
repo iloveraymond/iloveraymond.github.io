@@ -288,8 +288,8 @@ img {
 }
 
 .game-card canvas {
-  width: min(100%, 700px);
-  height: auto;
+  width: min(100%, 1440px);
+  aspect-ratio: 16 / 9;
   border-radius: var(--radius-medium);
   background: rgba(12, 18, 44, 0.9);
   border: 1px solid rgba(249, 168, 38, 0.2);
@@ -301,6 +301,42 @@ img {
   margin: 0;
   font-size: 0.95rem;
   letter-spacing: 0.02em;
+}
+
+.orbit-card {
+  gap: 2rem;
+}
+
+.orbit-slider-bar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.orbit-hud {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(12, 18, 44, 0.85);
+  border-radius: var(--radius-medium);
+  border: 1px solid rgba(249, 168, 38, 0.3);
+  box-shadow: 0 10px 25px rgba(9, 12, 26, 0.35);
+}
+
+.orbit-hud .scoreboard__message {
+  margin-top: 0;
+}
+
+.orbit-slider {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(204, 214, 246, 0.85);
+}
+
+.orbit-slider input[type="range"] {
+  width: min(480px, 100%);
+  accent-color: var(--highlight);
 }
 
 .game-card--split {

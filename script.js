@@ -97,6 +97,14 @@ if (arcadeCanvases.length > 0) {
   const tintedCache = new Map();
   let gamesStarted = false;
 
+  function enableHighQuality(ctx) {
+    if (!ctx) {
+      return;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+  }
+
   function getRaymondSprite(color, width, height) {
     const safeWidth = Math.max(1, Math.floor(width));
     const safeHeight = Math.max(1, Math.floor(height));
@@ -113,6 +121,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return raymondImage;
     }
+    enableHighQuality(ctx);
 
     ctx.drawImage(raymondImage, 0, 0, safeWidth, safeHeight);
     if (color) {
@@ -130,6 +139,16 @@ if (arcadeCanvases.length > 0) {
     const size = Math.max(12, Math.floor(scale));
     const tile = getRaymondSprite(tint, size, size);
     return ctx.createPattern(tile, "repeat");
+  }
+
+  function drawCircleSprite(ctx, sprite, x, y, radius) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
+    ctx.restore();
   }
 
   function drawTriangleSprite(ctx, sprite, size) {
@@ -266,6 +285,7 @@ if (arcadeCanvases.length > 0) {
     startRaymondMaze();
     startRaymondSlider();
     startRaymondRoguelike();
+    startOliversOrbit();
   }
 
   raymondImage.addEventListener("load", startGames);
@@ -284,6 +304,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const state = {
       width: canvas.width,
@@ -590,6 +611,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const scoreDisplay = document.querySelector("[data-cascade-score]");
     const missesDisplay = document.querySelector("[data-cascade-misses]");
@@ -702,6 +724,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const distanceDisplay = document.querySelector("[data-runner-distance]");
     const bestDisplay = document.querySelector("[data-runner-best]");
@@ -957,6 +980,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const scoreDisplay = document.querySelector("[data-rhythm-score]");
     const comboDisplay = document.querySelector("[data-rhythm-combo]");
@@ -1109,6 +1133,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const timeDisplay = document.querySelector("[data-maze-time]");
     const runDisplay = document.querySelector("[data-maze-runs]");
@@ -1259,6 +1284,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const movesDisplay = document.querySelector("[data-slider-moves]");
     const resetButton = document.querySelector("[data-slider-reset]");
@@ -1413,6 +1439,7 @@ if (arcadeCanvases.length > 0) {
     if (!ctx) {
       return;
     }
+    enableHighQuality(ctx);
 
     const depthDisplay = document.querySelector("[data-rogue-depth]");
     const hpDisplay = document.querySelector("[data-rogue-hp]");
@@ -1855,4 +1882,468 @@ if (arcadeCanvases.length > 0) {
     updateScoreboard();
     requestAnimationFrame(loop);
   }
+
+  // Oliver's Orbit
+  function startOliversOrbit() {
+    const canvas = document.getElementById("orbit-canvas");
+    if (!canvas) {
+      return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+    enableHighQuality(ctx);
+
+    const stageDisplay = document.querySelector("[data-orbit-stage]");
+    const launchDisplay = document.querySelector("[data-orbit-launches]");
+    const goalsDisplay = document.querySelector("[data-orbit-goals]");
+    const messageDisplay = document.querySelector("[data-orbit-message]");
+    const staticToggleButton = document.querySelector("[data-orbit-static-toggle]");
+
+    const width = canvas.width;
+    canvas.style.width = "100%";
+    canvas.style.height = "auto";
+    const height = canvas.height;
+    const launchPoint = { x: 150, y: height / 2 };
+    const COMET_RADIUS = 18;
+    const MIN_PLANET_RADIUS = 24;
+    const MAX_PLANET_RADIUS = 60;
+    const GOAL_RADIUS = Math.max(6, COMET_RADIUS - 6);
+    const GRAVITY_CONSTANT = 5200;
+    const SOFTENING = 5200;
+    const speedSlider = document.querySelector('[data-orbit-speed]');
+    let baseLaunchSpeed = Number(speedSlider?.value) || 170;
+    let maxSpeed = baseLaunchSpeed * 3;
+
+    const planetSprite = getRaymondSprite("rgba(249,168,38,0.35)", 120, 120);
+    const cometSprite = getRaymondSprite("rgba(255,255,255,0.78)", COMET_RADIUS * 2.4, COMET_RADIUS * 2.4);
+    const goalSprite = getRaymondSprite("rgba(255,255,255,0.82)", GOAL_RADIUS * 2.4, GOAL_RADIUS * 2.4);
+
+    const planets = [];
+    const goals = [];
+    let originalGoals = [];
+
+    let stageNumber = 1;
+    let launches = 0;
+    let staticModeEnabled = false;
+    let activePlanet = null;
+    let dragOffset = { x: 0, y: 0 };
+    let comet = null;
+    let lastSpacePressed = false;
+
+    if (speedSlider) {
+      speedSlider.addEventListener("input", () => {
+        baseLaunchSpeed = Number(speedSlider.value) || baseLaunchSpeed;
+        maxSpeed = baseLaunchSpeed * 3;
+      });
+    }
+
+    if (staticToggleButton) {
+      staticToggleButton.textContent = "Static Mode: Off";
+      staticToggleButton.addEventListener("click", () => {
+        staticModeEnabled = !staticModeEnabled;
+        staticToggleButton.textContent = staticModeEnabled ? "Static Mode: On" : "Static Mode: Off";
+        updateScoreboard(staticModeEnabled ? "Static mode enabled—planets lock once launched." : "Static mode disabled—mid-flight adjustments allowed.");
+      });
+    }
+
+    function randomPlanetRadius() {
+      return MIN_PLANET_RADIUS + Math.random() * (MAX_PLANET_RADIUS - MIN_PLANET_RADIUS);
+    }
+
+    function randomPlanetMass(radius) {
+      return 900 + radius * 45;
+    }
+
+    function updateScoreboard(message) {
+      if (stageDisplay) {
+        stageDisplay.textContent = String(stageNumber);
+      }
+      if (launchDisplay) {
+        launchDisplay.textContent = String(launches);
+      }
+      if (goalsDisplay) {
+        goalsDisplay.textContent = String(goals.length);
+      }
+      if (message !== undefined && messageDisplay) {
+        messageDisplay.textContent = message;
+      }
+    }
+
+    function isPlanetPlacementValid(x, y, radius, ignorePlanet) {
+      if (x - radius < 0 || x + radius > width || y - radius < 0 || y + radius > height) {
+        return false;
+      }
+      if (Math.hypot(x - launchPoint.x, y - launchPoint.y) < radius + 60) {
+        return false;
+      }
+      if (goals.some((goal) => Math.hypot(x - goal.x, y - goal.y) <= radius + goal.radius)) {
+        return false;
+      }
+      return planets.every((planet) => {
+        if (planet === ignorePlanet) {
+          return true;
+        }
+        return Math.hypot(x - planet.x, y - planet.y) > planet.radius + radius;
+      });
+    }
+
+    function findPlanetPlacement(radius) {
+      for (let attempt = 0; attempt < 220; attempt += 1) {
+        const candidateX = radius + 40 + Math.random() * (width - radius * 2 - 80);
+        const candidateY = radius + 40 + Math.random() * (height - radius * 2 - 80);
+        if (isPlanetPlacementValid(candidateX, candidateY, radius, null)) {
+          return { x: candidateX, y: candidateY };
+        }
+      }
+      return null;
+    }
+
+    function addPlanet(radius) {
+      const placement = findPlanetPlacement(radius);
+      if (!placement) {
+        return false;
+      }
+      planets.push({ x: placement.x, y: placement.y, radius, mass: randomPlanetMass(radius) });
+      return true;
+    }
+
+    function generatePlanets(count) {
+      planets.length = 0;
+      let attempts = count * 24;
+      while (planets.length < count && attempts > 0) {
+        attempts -= 1;
+        const radius = randomPlanetRadius();
+        if (!addPlanet(radius) && attempts % 4 === 0) {
+          addPlanet(MIN_PLANET_RADIUS);
+        }
+      }
+      while (planets.length < count) {
+        if (!addPlanet(MIN_PLANET_RADIUS)) {
+          break;
+        }
+      }
+    }
+
+    function spawnGoals() {
+      goals.length = 0;
+      const goalCount = Math.max(1, stageNumber);
+      const margin = 140;
+      let attempts = 0;
+      while (goals.length < goalCount && attempts < goalCount * 200) {
+        attempts += 1;
+        const candidateX = margin + Math.random() * (width - margin * 2);
+        const candidateY = margin + Math.random() * (height - margin * 2);
+        if (Math.hypot(candidateX - launchPoint.x, candidateY - launchPoint.y) < COMET_RADIUS + 200) {
+          continue;
+        }
+        if (
+          planets.some((planet) => Math.hypot(candidateX - planet.x, candidateY - planet.y) <= planet.radius + GOAL_RADIUS)
+        ) {
+          continue;
+        }
+        if (goals.some((goal) => Math.hypot(candidateX - goal.x, candidateY - goal.y) <= goal.radius + GOAL_RADIUS)) {
+          continue;
+        }
+        goals.push({ x: candidateX, y: candidateY, radius: GOAL_RADIUS });
+      }
+      originalGoals = goals.map((goal) => ({ ...goal }));
+      updateScoreboard();
+    }
+
+    function restoreOriginalGoals() {
+      goals.length = 0;
+      goals.push(...originalGoals.map((goal) => ({ ...goal })));
+      updateScoreboard();
+    }
+
+    function resetComet() {
+      comet = {
+        x: launchPoint.x,
+        y: launchPoint.y,
+        vx: 0,
+        vy: 0,
+        launched: false,
+        trail: [],
+      };
+    }
+
+    function resetRunPreserveGoals(message) {
+      restoreOriginalGoals();
+      resetComet();
+      if (message) {
+        updateScoreboard(message);
+      }
+    }
+
+    function startStage(targetStage) {
+      stageNumber = targetStage;
+      launches = 0;
+      goals.length = 0;
+      originalGoals = [];
+      generatePlanets(stageNumber);
+      spawnGoals();
+      resetComet();
+      updateScoreboard(`Stage ${stageNumber}: collect ${goals.length} goal${goals.length === 1 ? '' : 's'}.`);
+    }
+
+    function advanceStage() {
+      startStage(stageNumber + 1);
+      updateScoreboard(`Stage ${stageNumber}: new gravity wells deployed.`);
+    }
+
+    function handlePointerDown(event) {
+      if (staticModeEnabled && comet && comet.launched) {
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      for (let i = planets.length - 1; i >= 0; i -= 1) {
+        const planet = planets[i];
+        const dx = x - planet.x;
+        const dy = y - planet.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= planet.radius * 0.9) {
+          activePlanet = planet;
+          dragOffset = { x: dx, y: dy };
+          canvas.style.cursor = "grabbing";
+          break;
+        }
+      }
+    }
+
+    function handlePointerMove(event) {
+      if (activePlanet && staticModeEnabled && comet && comet.launched) {
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      if (activePlanet) {
+        const candidateX = Math.max(
+          activePlanet.radius,
+          Math.min(width - activePlanet.radius, x - dragOffset.x)
+        );
+        const candidateY = Math.max(
+          activePlanet.radius,
+          Math.min(height - activePlanet.radius, y - dragOffset.y)
+        );
+
+        let finalX = candidateX;
+        let finalY = candidateY;
+        let settled = false;
+        if (isPlanetPlacementValid(finalX, finalY, activePlanet.radius, activePlanet)) {
+          settled = true;
+        } else {
+          for (const planet of planets) {
+            if (planet === activePlanet) {
+              continue;
+            }
+            const dx = finalX - planet.x;
+            const dy = finalY - planet.y;
+            const distance = Math.hypot(dx, dy);
+            const minDistance = planet.radius + activePlanet.radius;
+            if (distance === 0) {
+              continue;
+            }
+            if (distance < minDistance) {
+              const scale = minDistance / distance;
+              finalX = planet.x + dx * scale;
+              finalY = planet.y + dy * scale;
+              finalX = Math.max(activePlanet.radius, Math.min(width - activePlanet.radius, finalX));
+              finalY = Math.max(activePlanet.radius, Math.min(height - activePlanet.radius, finalY));
+              if (isPlanetPlacementValid(finalX, finalY, activePlanet.radius, activePlanet)) {
+                settled = true;
+              }
+              break;
+            }
+          }
+        }
+
+        if (!settled && isPlanetPlacementValid(finalX, finalY, activePlanet.radius, activePlanet)) {
+          settled = true;
+        }
+
+        if (settled) {
+          activePlanet.x = finalX;
+          activePlanet.y = finalY;
+        }
+      } else {
+        const hovering = planets.some((planet) => Math.hypot(x - planet.x, y - planet.y) <= planet.radius * 0.9);
+        canvas.style.cursor = hovering ? "grab" : "default";
+      }
+    }
+
+    function handlePointerUp() {
+      activePlanet = null;
+      canvas.style.cursor = "default";
+    }
+
+    canvas.addEventListener("mousedown", handlePointerDown);
+    canvas.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("mouseup", handlePointerUp);
+
+    function launchComet() {
+      if (!comet || comet.launched) {
+        return;
+      }
+      const speedMultiplier = 1 + (stageNumber - 1) * 0.08;
+      const speed = baseLaunchSpeed * speedMultiplier;
+      comet.vx = speed;
+      comet.vy = 0;
+      comet.launched = true;
+      launches += 1;
+      updateScoreboard();
+    }
+
+    function update(dt) {
+      const spacePressed = keyState.has(" ");
+      if (spacePressed && !lastSpacePressed) {
+        if (comet && comet.launched) {
+          resetRunPreserveGoals("Comet reset—goals restored.");
+        } else {
+          launchComet();
+        }
+      }
+      lastSpacePressed = spacePressed;
+
+      if (!comet) {
+        resetComet();
+      }
+
+      if (comet.launched) {
+        const subSteps = Math.max(1, Math.ceil(dt / 0.01));
+        const stepDt = dt / subSteps;
+
+        for (let step = 0; step < subSteps; step += 1) {
+          let ax = 0;
+          let ay = 0;
+          let collided = false;
+
+          planets.forEach((planet) => {
+            const dx = planet.x - comet.x;
+            const dy = planet.y - comet.y;
+            const distanceSq = dx * dx + dy * dy;
+            const combinedRadius = planet.radius + COMET_RADIUS;
+            if (distanceSq <= combinedRadius * combinedRadius) {
+              collided = true;
+              return;
+            }
+
+            const softened = distanceSq + SOFTENING;
+            const distance = Math.sqrt(softened);
+            const force = (planet.mass * GRAVITY_CONSTANT) / softened;
+            ax += (force * dx) / distance;
+            ay += (force * dy) / distance;
+          });
+
+          if (collided) {
+            restoreOriginalGoals();
+            resetRunPreserveGoals("The comet struck a planet—goals restored.");
+            break;
+          }
+
+          comet.vx += ax * stepDt;
+          comet.vy += ay * stepDt;
+
+          comet.vx = Math.max(-maxSpeed, Math.min(maxSpeed, comet.vx));
+          comet.vy = Math.max(-maxSpeed, Math.min(maxSpeed, comet.vy));
+
+          comet.x += comet.vx * stepDt;
+          comet.y += comet.vy * stepDt;
+
+          comet.trail.push({ x: comet.x, y: comet.y });
+          if (comet.trail.length > 220) {
+            comet.trail.shift();
+          }
+
+          for (let g = goals.length - 1; g >= 0; g -= 1) {
+            const goal = goals[g];
+            if (Math.hypot(comet.x - goal.x, comet.y - goal.y) <= COMET_RADIUS + goal.radius) {
+              goals.splice(g, 1);
+              updateScoreboard(goals.length ? "Goal captured—keep going!" : "All goals cleared—deploying new targets.");
+              if (goals.length === 0) {
+                advanceStage();
+              }
+              break;
+            }
+          }
+
+          if (
+            comet.x < -180 ||
+            comet.x > width + 180 ||
+            comet.y < -180 ||
+            comet.y > height + 180
+          ) {
+            resetRunPreserveGoals("The comet drifted away—recalibrate and relaunch.");
+            break;
+          }
+        }
+      } else {
+        comet.x = launchPoint.x;
+        comet.y = launchPoint.y;
+        comet.trail = [];
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = createPattern(ctx, 28, "rgba(58,80,107,0.15)");
+      ctx.fillRect(0, 0, width, height);
+
+      goals.forEach((goal) => {
+        drawCircleSprite(ctx, goalSprite, goal.x, goal.y, goal.radius);
+      });
+
+      planets.forEach((planet) => {
+        drawCircleSprite(ctx, planetSprite, planet.x, planet.y, planet.radius);
+      });
+
+      ctx.strokeStyle = "rgba(249,168,38,0.25)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(launchPoint.x, launchPoint.y, 24, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (comet && comet.trail.length > 1) {
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(comet.trail[0].x, comet.trail[0].y);
+        for (let i = 1; i < comet.trail.length; i += 1) {
+          ctx.lineTo(comet.trail[i].x, comet.trail[i].y);
+        }
+        ctx.stroke();
+      }
+
+      drawCircleSprite(ctx, cometSprite, comet.x, comet.y, COMET_RADIUS);
+    }
+
+    canvas.addEventListener("mouseleave", () => {
+      if (!activePlanet) {
+        canvas.style.cursor = "default";
+      }
+    });
+
+    startStage(stageNumber);
+    updateScoreboard("Position the planets, then press space to launch.");
+
+    let last = performance.now();
+    function loop(timestamp) {
+      const delta = (timestamp - last) / 1000;
+      last = timestamp;
+      update(delta);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
 }
