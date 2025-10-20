@@ -1932,10 +1932,7 @@ if (arcadeCanvases.length > 0) {
     enableHighQuality(ctx);
 
     const stageDisplay = document.querySelector("[data-orbit-stage]");
-    const launchDisplay = document.querySelector("[data-orbit-launches]");
-    const goalsDisplay = document.querySelector("[data-orbit-goals]");
     const messageDisplay = document.querySelector("[data-orbit-message]");
-    const staticToggleButton = document.querySelector("[data-orbit-static-toggle]");
     const stageSelect = document.querySelector("[data-orbit-stage-select]");
     const exportButton = document.querySelector("[data-orbit-export]");
     const importButton = document.querySelector("[data-orbit-import]");
@@ -1994,8 +1991,6 @@ if (arcadeCanvases.length > 0) {
 
     let stageNumber = 1;
     let highestStageUnlocked = 1;
-    let launches = 0;
-    let staticModeEnabled = true;
     let activePlanet = null;
     let dragOffset = { x: 0, y: 0 };
     let comet = null;
@@ -2019,7 +2014,6 @@ if (arcadeCanvases.length > 0) {
           highest,
           launchSpeed: Number.isFinite(parsed.launchSpeed) ? clamp(parsed.launchSpeed, MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED) : null,
           launchAngle: Number.isFinite(parsed.launchAngle) ? parsed.launchAngle : null,
-          staticMode: typeof parsed.staticMode === "boolean" ? parsed.staticMode : null,
         };
       } catch (error) {
         return null;
@@ -2035,23 +2029,9 @@ if (arcadeCanvases.length > 0) {
       if (storedProgress.launchAngle !== null) {
         launchAngle = storedProgress.launchAngle;
       }
-      if (storedProgress.staticMode !== null) {
-        staticModeEnabled = storedProgress.staticMode;
-      }
     }
     baseLaunchSpeed = clamp(baseLaunchSpeed, MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED);
     launchAngle = normalizeAngle(launchAngle);
-
-    refreshStaticToggleLabel();
-
-    if (staticToggleButton) {
-      staticToggleButton.addEventListener("click", () => {
-        staticModeEnabled = !staticModeEnabled;
-        refreshStaticToggleLabel();
-        updateScoreboard(staticModeEnabled ? "Static mode enabled—planets lock once launched." : "Static mode disabled—mid-flight adjustments allowed.");
-        persistProgress();
-      });
-    }
 
     syncStageSelect();
 
@@ -2118,21 +2098,9 @@ if (arcadeCanvases.length > 0) {
       return 900 + radius * 45;
     }
 
-    function refreshStaticToggleLabel() {
-      if (staticToggleButton) {
-        staticToggleButton.textContent = staticModeEnabled ? "Static Mode: On" : "Static Mode: Off";
-      }
-    }
-
     function updateScoreboard(message) {
       if (stageDisplay) {
         stageDisplay.textContent = String(stageNumber);
-      }
-      if (launchDisplay) {
-        launchDisplay.textContent = String(launches);
-      }
-      if (goalsDisplay) {
-        goalsDisplay.textContent = String(goals.length);
       }
       if (message !== undefined && messageDisplay) {
         messageDisplay.textContent = message;
@@ -2146,7 +2114,6 @@ if (arcadeCanvases.length > 0) {
           highestStage: highestStageUnlocked,
           launchSpeed: baseLaunchSpeed,
           launchAngle,
-          staticMode: staticModeEnabled,
         });
         localStorage.setItem(ORBIT_STORAGE_KEY, payload);
       } catch (error) {
@@ -2238,7 +2205,6 @@ if (arcadeCanvases.length > 0) {
         stage: stageNumber,
         launchSpeed: roundTo(baseLaunchSpeed),
         launchAngle: roundTo(normalizeAngle(launchAngle), 4),
-        staticMode: staticModeEnabled,
         planets: planets.map((planet) => ({
           x: roundTo(planet.x),
           y: roundTo(planet.y),
@@ -2309,17 +2275,11 @@ if (arcadeCanvases.length > 0) {
       baseLaunchSpeed = resolvedSpeed;
       launchAngle = normalizeAngle(resolvedAngle);
 
-      if (typeof layout.staticMode === "boolean") {
-        staticModeEnabled = layout.staticMode;
-      }
-      refreshStaticToggleLabel();
-
       planets.length = 0;
       planets.push(...sanitizedPlanets);
       goals.length = 0;
       goals.push(...sanitizedGoals);
       originalGoals = goals.map((goal) => ({ ...goal }));
-      launches = 0;
       resetComet();
       hideVictoryOverlay();
       syncStageSelect();
@@ -2437,7 +2397,6 @@ if (arcadeCanvases.length > 0) {
       hideVictoryOverlay();
       stageNumber = Math.max(1, Math.floor(targetStage));
       highestStageUnlocked = Math.max(highestStageUnlocked, stageNumber);
-      launches = 0;
       goals.length = 0;
       originalGoals = [];
       generatePlanets(stageNumber);
@@ -2454,7 +2413,8 @@ if (arcadeCanvases.length > 0) {
     }
 
     function handlePointerDown(event) {
-      if (staticModeEnabled && comet && comet.launched) {
+      if (comet && comet.launched) {
+        updateScoreboard("Static mode: relaunch (space) to adjust planets again.");
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -2476,7 +2436,7 @@ if (arcadeCanvases.length > 0) {
     }
 
     function handlePointerMove(event) {
-      if (activePlanet && staticModeEnabled && comet && comet.launched) {
+      if (comet && comet.launched) {
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -2557,7 +2517,6 @@ if (arcadeCanvases.length > 0) {
       comet.vx = Math.cos(launchAngle) * speed;
       comet.vy = -Math.sin(launchAngle) * speed;
       comet.launched = true;
-      launches += 1;
       updateScoreboard();
     }
 
@@ -2757,7 +2716,7 @@ if (arcadeCanvases.length > 0) {
     });
 
     startStage(stageNumber);
-    updateScoreboard("Position the planets, aim with A/D or ←/→, tune power with W/S or ↑/↓, then press space to launch.");
+    updateScoreboard("Planets lock after launch—position them, aim with A/D or ←/→, boost with W/S or ↑/↓, then press space.");
 
     let last = performance.now();
     function loop(timestamp) {

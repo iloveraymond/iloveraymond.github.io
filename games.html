@@ -43,8 +43,40 @@
         </p>
       </section>
 
-      <section class="section" id="pong">
+      <section class="section" id="orbit">
         <div class="section__label">Game 01</div>
+        <h2>Oliver’s Orbit</h2>
+        <p>
+          Arrange radiant planets so a comet carved from <em>raymond.png</em> threads a growing constellation of goals. Adjust
+          the orbits mid-flight, harness gravity, and let Oliver’s ingenuity guide every stage of this infinite run.
+        </p>
+        <div class="game-card orbit-card">
+          <div class="game-card__canvas">
+            <div class="game-canvas-frame orbit-canvas-frame">
+              <canvas id="orbit-canvas" width="1440" height="810" aria-label="Oliver's Orbit gravity puzzle"></canvas>
+              <button class="arcade-button game-launcher" type="button" data-game-start="orbit">Play Oliver’s Orbit</button>
+            </div>
+          </div>
+          <p class="orbit-launch-guide">Controls: Drag planets; aim A/D or ←/→; boost W/S or ↑/↓; launch with space.</p>
+          <div class="orbit-hud" aria-live="polite">
+            <div class="orbit-metrics">
+              <p><span class="scoreboard__label">Stage:</span> <span data-orbit-stage>1</span></p>
+            </div>
+            <label class="orbit-stage-select">Start Stage
+              <select data-orbit-stage-select></select>
+            </label>
+            <div class="orbit-state-controls">
+              <button class="arcade-button" type="button" data-orbit-export>Download Layout</button>
+              <button class="arcade-button" type="button" data-orbit-import>Load Layout</button>
+              <input type="file" accept=".txt,application/json" data-orbit-import-input hidden>
+            </div>
+            <p class="scoreboard__message" data-orbit-message>Planets lock after launch—aim and boost before you fire.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="pong">
+        <div class="section__label">Game 02</div>
         <h2>Raymond Pong</h2>
         <p>
           Rally volley after volley in a radiant reinterpretation of the arcade classic. Oliver’s energy becomes both
@@ -63,7 +95,7 @@
       </section>
 
       <section class="section section--alt" id="stellar">
-        <div class="section__label">Game 02</div>
+        <div class="section__label">Game 03</div>
         <h2>Stellar Zarak</h2>
         <p>
           Drift through a luminous starfield where Oliver’s portrait fragments swirl as asteroids. Pilot your Raymondship,
@@ -82,7 +114,7 @@
       </section>
 
       <section class="section" id="cascade">
-        <div class="section__label">Game 03</div>
+        <div class="section__label">Game 04</div>
         <h2>Raymond Cascade</h2>
         <p>
           Stand beneath a downpour of inspiration. Each drop is Oliver’s image, tumbling joyfully from above. Glide the
@@ -107,7 +139,7 @@
       </section>
 
       <section class="section section--alt" id="runner">
-        <div class="section__label">Game 04</div>
+        <div class="section__label">Game 05</div>
         <h2>Raymond Runner</h2>
         <p>
           Race across a golden skyline fueled by Oliver’s unstoppable momentum. Every stride, leap, and obstacle is a
@@ -133,7 +165,7 @@
       </section>
 
       <section class="section section--alt" id="memory">
-        <div class="section__label">Game 05</div>
+        <div class="section__label">Game 06</div>
         <h2>Memory Mosaic</h2>
         <p>
           Flip radiant tiles to reveal Oliver’s portrait in a kaleidoscope of colors. Pair matching hues to complete the
@@ -160,7 +192,7 @@
       </section>
 
       <section class="section" id="rhythm">
-        <div class="section__label">Game 06</div>
+        <div class="section__label">Game 07</div>
         <h2>Raymond Rhythm</h2>
         <p>
           Feel the beat of Oliver’s brilliance. Rays of inspiration glide down harmonic lanes—catch them in perfect time to
@@ -187,7 +219,7 @@
       </section>
 
       <section class="section section--alt" id="maze">
-        <div class="section__label">Game 07</div>
+        <div class="section__label">Game 08</div>
         <h2>Maze of Brilliance</h2>
         <p>
           Navigate a labyrinth sculpted entirely from Oliver’s likeness. Each corridor glows with possibility—reach the
@@ -214,7 +246,7 @@
       </section>
 
       <section class="section" id="slider">
-        <div class="section__label">Game 08</div>
+        <div class="section__label">Game 09</div>
         <h2>Puzzle Slider</h2>
         <p>
           Reassemble Oliver’s portrait by sliding tiles into place. Each move draws the likeness into sharper focus until
@@ -240,7 +272,7 @@
       </section>
 
       <section class="section section--alt" id="roguelike">
-        <div class="section__label">Game 09</div>
+        <div class="section__label">Game 10</div>
         <h2>Radiant Roguelike</h2>
         <p>
           Venture through procedurally shifting vaults where every corridor, foe, and treasure is sculpted from
@@ -265,48 +297,6 @@
             <p class="game-card__rules">
               Controls: Use WASD or arrow keys to move one tile per turn, bump foes to strike, and linger on “.” to wait.
               Gather hearts, seize shimmering shards, and find the glowing exit to descend.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="orbit">
-        <div class="section__label">Game 10</div>
-        <h2>Oliver’s Orbit</h2>
-        <p>
-          Arrange radiant planets so a comet carved from <em>raymond.png</em> threads a growing constellation of goals. Adjust
-          the orbits mid-flight, harness gravity, and let Oliver’s ingenuity guide every stage of this infinite run.
-        </p>
-        <div class="game-card orbit-card">
-          <div class="game-card__canvas">
-            <div class="game-canvas-frame orbit-canvas-frame">
-              <canvas id="orbit-canvas" width="1440" height="810" aria-label="Oliver's Orbit gravity puzzle"></canvas>
-              <button class="arcade-button game-launcher" type="button" data-game-start="orbit">Play Oliver’s Orbit</button>
-            </div>
-          </div>
-          <p class="orbit-launch-guide">
-            Aim with A/D or ←/→ and tune thruster power with W/S or ↑/↓. Press space to launch the comet.
-          </p>
-          <div class="orbit-hud" aria-live="polite">
-            <div class="orbit-metrics">
-              <p><span class="scoreboard__label">Stage:</span> <span data-orbit-stage>1</span></p>
-              <p><span class="scoreboard__label">Launches:</span> <span data-orbit-launches>0</span></p>
-              <p><span class="scoreboard__label">Goals:</span> <span data-orbit-goals>0</span></p>
-            </div>
-            <button class="arcade-button" type="button" data-orbit-static-toggle>Static Mode: Off</button>
-            <label class="orbit-stage-select">Start Stage
-              <select data-orbit-stage-select></select>
-            </label>
-            <div class="orbit-state-controls">
-              <button class="arcade-button" type="button" data-orbit-export>Download Layout</button>
-              <button class="arcade-button" type="button" data-orbit-import>Load Layout</button>
-              <input type="file" accept=".txt,application/json" data-orbit-import-input hidden>
-            </div>
-            <p class="scoreboard__message" data-orbit-message>Position the planets, aim with A/D or ←/→, tune power with W/S or ↑/↓, then press space to launch.</p>
-            <p class="game-card__rules">
-              Controls: Aim with A/D or ←/→, adjust power with W/S or ↑/↓, and tap space to launch. Drag planets to
-              reposition them and collect every radiant goal orb in a single run. Toggle static mode to prevent mid-flight
-              adjustments if you prefer a pure puzzle.
             </p>
           </div>
         </div>
