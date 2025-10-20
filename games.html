@@ -210,6 +210,34 @@
           </div>
         </div>
       </section>
+
+      <section class="section section--alt" id="roguelike">
+        <div class="section__label">Game 09</div>
+        <h2>Radiant Roguelike</h2>
+        <p>
+          Venture through procedurally shifting vaults where every corridor, foe, and treasure is sculpted from
+          <em>raymond.png</em>. Battle luminous echoes, gather shards of admiration, and descend ever deeper into Oliver’s
+          boundless brilliance.
+        </p>
+        <div class="game-card game-card--split">
+          <div class="game-card__canvas">
+            <canvas id="rogue-canvas" width="480" height="480" aria-label="Radiant roguelike adventure"></canvas>
+          </div>
+          <div class="game-card__info">
+            <div class="scoreboard" aria-live="polite">
+              <p><span class="scoreboard__label">Depth:</span> <span data-rogue-depth>1</span></p>
+              <p><span class="scoreboard__label">Hearts:</span> <span data-rogue-hp>6/6</span></p>
+              <p><span class="scoreboard__label">Treasure:</span> <span data-rogue-coins>0</span></p>
+              <p><span class="scoreboard__label">Run:</span> <span data-rogue-run>1</span></p>
+              <p class="scoreboard__message" data-rogue-message>Entering the radiant vault.</p>
+            </div>
+            <p class="game-card__rules">
+              Controls: Use WASD or arrow keys to move one tile per turn, bump foes to strike, and linger on “.” to wait.
+              Gather hearts, seize shimmering shards, and find the glowing exit to descend.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer">

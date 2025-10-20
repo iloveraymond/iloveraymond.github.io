@@ -349,6 +349,17 @@ img {
   color: rgba(249, 168, 38, 0.75);
 }
 
+.scoreboard__message {
+  display: block;
+  gap: 0;
+  justify-content: initial;
+  align-items: initial;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: rgba(204, 214, 246, 0.9);
+}
+
 .arcade-button {
   display: inline-flex;
   align-items: center;

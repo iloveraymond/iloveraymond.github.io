@@ -65,6 +65,7 @@ sectionAnchors.forEach((anchor) => {
 const arcadeCanvases = document.querySelectorAll(".game-card canvas");
 if (arcadeCanvases.length > 0) {
   const keyState = new Set();
+  const keyQueue = [];
   window.addEventListener(
     "keydown",
     (event) => {
@@ -73,6 +74,15 @@ if (arcadeCanvases.length > 0) {
         event.preventDefault();
       }
       keyState.add(key);
+      if (
+        !event.repeat &&
+        ["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d", "."].includes(key)
+      ) {
+        keyQueue.push(key);
+        if (keyQueue.length > 32) {
+          keyQueue.shift();
+        }
+      }
     },
     { passive: false }
   );
@@ -255,6 +265,7 @@ if (arcadeCanvases.length > 0) {
     startRaymondRhythm();
     startRaymondMaze();
     startRaymondSlider();
+    startRaymondRoguelike();
   }
 
   raymondImage.addEventListener("load", startGames);
@@ -1389,5 +1400,459 @@ if (arcadeCanvases.length > 0) {
 
     shuffleBoard();
     drawPuzzle();
+  }
+
+  // Raymond Roguelike
+  function startRaymondRoguelike() {
+    const canvas = document.getElementById("rogue-canvas");
+    if (!canvas) {
+      return;
+    }
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+
+    const depthDisplay = document.querySelector("[data-rogue-depth]");
+    const hpDisplay = document.querySelector("[data-rogue-hp]");
+    const coinsDisplay = document.querySelector("[data-rogue-coins]");
+    const messageDisplay = document.querySelector("[data-rogue-message]");
+    const runDisplay = document.querySelector("[data-rogue-run]");
+
+    const cols = 20;
+    const rows = 20;
+    const cellSize = canvas.width / cols;
+    const directions = [
+      { dx: 0, dy: -1 },
+      { dx: 1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: -1, dy: 0 },
+    ];
+
+    const moveCommands = {
+      arrowup: { dx: 0, dy: -1 },
+      w: { dx: 0, dy: -1 },
+      arrowdown: { dx: 0, dy: 1 },
+      s: { dx: 0, dy: 1 },
+      arrowleft: { dx: -1, dy: 0 },
+      a: { dx: -1, dy: 0 },
+      arrowright: { dx: 1, dy: 0 },
+      d: { dx: 1, dy: 0 },
+      ".": { dx: 0, dy: 0, wait: true },
+    };
+
+    const state = {
+      cols,
+      rows,
+      grid: [],
+      depth: 1,
+      run: 1,
+      player: {
+        x: 0,
+        y: 0,
+        hp: 6,
+        maxHp: 6,
+        coins: 0,
+      },
+      enemies: [],
+      pickups: [],
+      exit: { x: 0, y: 0 },
+      messages: ["Entering the radiant vault."],
+      damageFlash: 0,
+    };
+
+    const wallSprite = getRaymondSprite("rgba(12,18,44,0.78)", cellSize, cellSize);
+    const floorSprite = getRaymondSprite("rgba(249,168,38,0.08)", cellSize, cellSize);
+    const exitSprite = getRaymondSprite("rgba(249,168,38,0.45)", cellSize, cellSize);
+    const heartSprite = getRaymondSprite("rgba(255,105,97,0.48)", cellSize * 0.7, cellSize * 0.7);
+    const coinSprite = getRaymondSprite("rgba(255,223,99,0.58)", cellSize * 0.6, cellSize * 0.6);
+    const playerSprite = getRaymondSprite("rgba(255,255,255,0.85)", cellSize * 0.8, cellSize * 0.8);
+
+    function enemySpriteForDepth() {
+      const intensity = Math.min(0.75, 0.3 + state.depth * 0.05);
+      return getRaymondSprite(`rgba(255,130,110,${intensity})`, cellSize * 0.76, cellSize * 0.76);
+    }
+
+    function pushMessage(text) {
+      state.messages.push(text);
+      if (state.messages.length > 4) {
+        state.messages.shift();
+      }
+    }
+
+    function updateScoreboard() {
+      if (depthDisplay) {
+        depthDisplay.textContent = state.depth.toString();
+      }
+      if (hpDisplay) {
+        hpDisplay.textContent = `${state.player.hp}/${state.player.maxHp}`;
+      }
+      if (coinsDisplay) {
+        coinsDisplay.textContent = state.player.coins.toString();
+      }
+      if (runDisplay) {
+        runDisplay.textContent = state.run.toString();
+      }
+      if (messageDisplay) {
+        const recent = state.messages.slice(-2).join(" • ");
+        messageDisplay.textContent = recent || "Exploring...";
+      }
+    }
+
+    function bfsDistances(start, grid) {
+      const dist = Array.from({ length: rows }, () => Array(cols).fill(Infinity));
+      const queue = [start];
+      dist[start.y][start.x] = 0;
+      while (queue.length > 0) {
+        const current = queue.shift();
+        directions.forEach(({ dx, dy }) => {
+          const nx = current.x + dx;
+          const ny = current.y + dy;
+          if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) {
+            return;
+          }
+          if (grid[ny][nx] !== "floor") {
+            return;
+          }
+          if (dist[ny][nx] !== Infinity) {
+            return;
+          }
+          dist[ny][nx] = dist[current.y][current.x] + 1;
+          queue.push({ x: nx, y: ny });
+        });
+      }
+      return dist;
+    }
+
+    function generateFloor(isNewRun = false) {
+      let attempt = 0;
+      let generated = false;
+      while (!generated && attempt < 12) {
+        attempt += 1;
+        const grid = Array.from({ length: rows }, () => Array(cols).fill("wall"));
+        let cx = Math.floor(cols / 2);
+        let cy = Math.floor(rows / 2);
+        grid[cy][cx] = "floor";
+        const carveSteps = cols * rows * 4;
+        for (let i = 0; i < carveSteps; i += 1) {
+          const { dx, dy } = directions[Math.floor(Math.random() * directions.length)];
+          cx = Math.max(1, Math.min(cols - 2, cx + dx));
+          cy = Math.max(1, Math.min(rows - 2, cy + dy));
+          grid[cy][cx] = "floor";
+        }
+        const floors = [];
+        for (let y = 0; y < rows; y += 1) {
+          for (let x = 0; x < cols; x += 1) {
+            if (grid[y][x] === "floor") {
+              floors.push({ x, y });
+            }
+          }
+        }
+        if (floors.length < cols * rows * 0.35) {
+          continue;
+        }
+        const start = floors[Math.floor(Math.random() * floors.length)];
+        const distances = bfsDistances(start, grid);
+        let farthest = start;
+        let maxDist = 0;
+        floors.forEach((cell) => {
+          const d = distances[cell.y][cell.x];
+          if (Number.isFinite(d) && d > maxDist) {
+            maxDist = d;
+            farthest = cell;
+          }
+        });
+        if (!Number.isFinite(maxDist) || maxDist < Math.floor(Math.min(cols, rows) / 2)) {
+          continue;
+        }
+        generated = true;
+        state.grid = grid;
+        state.player.x = start.x;
+        state.player.y = start.y;
+        state.exit = { x: farthest.x, y: farthest.y };
+        if (isNewRun) {
+          state.player.hp = state.player.maxHp;
+          state.player.coins = 0;
+        } else {
+          state.player.hp = Math.min(state.player.maxHp, state.player.hp + 1);
+        }
+        const used = new Set([`${start.x},${start.y}`, `${state.exit.x},${state.exit.y}`]);
+        const pickups = [];
+        const coinsToPlace = Math.min(10, 4 + state.depth);
+        const heartsToPlace = Math.max(1, Math.floor(state.depth / 2));
+        function placePickup(type) {
+          for (let tries = 0; tries < 20; tries += 1) {
+            const tile = floors[Math.floor(Math.random() * floors.length)];
+            const key = `${tile.x},${tile.y}`;
+            if (used.has(key)) {
+              continue;
+            }
+            used.add(key);
+            pickups.push({ x: tile.x, y: tile.y, type });
+            return;
+          }
+        }
+        for (let i = 0; i < coinsToPlace; i += 1) {
+          placePickup("coin");
+        }
+        for (let i = 0; i < heartsToPlace; i += 1) {
+          placePickup("heart");
+        }
+        state.pickups = pickups;
+        const enemies = [];
+        const enemyCount = Math.min(12, 3 + state.depth);
+        for (let i = 0; i < enemyCount; i += 1) {
+          for (let tries = 0; tries < 30; tries += 1) {
+            const tile = floors[Math.floor(Math.random() * floors.length)];
+            const key = `${tile.x},${tile.y}`;
+            if (used.has(key)) {
+              continue;
+            }
+            used.add(key);
+            const baseHp = 1 + Math.floor(state.depth / 4);
+            enemies.push({
+              x: tile.x,
+              y: tile.y,
+              hp: baseHp,
+              maxHp: baseHp,
+              damage: 1 + Math.floor(state.depth / 6),
+            });
+            break;
+          }
+        }
+        state.enemies = enemies;
+        pushMessage(
+          isNewRun
+            ? "A fresh delve begins."
+            : `Depth ${state.depth} unfolds—Oliver gains a moment of calm.`
+        );
+      }
+      if (!generated) {
+        const grid = Array.from({ length: rows }, () => Array(cols).fill("floor"));
+        for (let x = 0; x < cols; x += 1) {
+          grid[0][x] = "wall";
+          grid[rows - 1][x] = "wall";
+        }
+        for (let y = 0; y < rows; y += 1) {
+          grid[y][0] = "wall";
+          grid[y][cols - 1] = "wall";
+        }
+        state.grid = grid;
+        state.player.x = Math.floor(cols / 2);
+        state.player.y = Math.floor(rows / 2);
+        if (isNewRun) {
+          state.player.hp = state.player.maxHp;
+          state.player.coins = 0;
+        } else {
+          state.player.hp = Math.min(state.player.maxHp, state.player.hp + 1);
+        }
+        state.exit = { x: cols - 2, y: rows - 2 };
+        state.pickups = [
+          { x: 2, y: 2, type: "heart" },
+          { x: cols - 3, y: 2, type: "coin" },
+        ];
+        state.enemies = [];
+        pushMessage("The vault reluctantly reshapes itself into an open hall.");
+      }
+      updateScoreboard();
+    }
+
+    function tileBlocked(x, y) {
+      if (x < 0 || x >= cols || y < 0 || y >= rows) {
+        return true;
+      }
+      return state.grid[y][x] !== "floor";
+    }
+
+    function enemyAt(x, y) {
+      return state.enemies.find((enemy) => enemy.x === x && enemy.y === y);
+    }
+
+    function pickupAt(x, y) {
+      return state.pickups.find((item) => item.x === x && item.y === y);
+    }
+
+    function consumeInput() {
+      while (keyQueue.length > 0) {
+        const key = keyQueue.shift();
+        if (moveCommands[key]) {
+          return moveCommands[key];
+        }
+      }
+      return null;
+    }
+
+    function handlePickup(item) {
+      if (!item) {
+        return;
+      }
+      if (item.type === "coin") {
+        state.player.coins += 1;
+        pushMessage("Radiant shard gathered.");
+      } else if (item.type === "heart") {
+        if (state.player.hp < state.player.maxHp) {
+          state.player.hp = Math.min(state.player.maxHp, state.player.hp + 2);
+          pushMessage("Oliver's heart glows brighter.");
+        } else {
+          state.player.coins += 1;
+          pushMessage("Spare warmth crystallises into treasure.");
+        }
+      }
+      state.pickups = state.pickups.filter((it) => it !== item);
+    }
+
+    function handlePlayerTurn(command) {
+      if (!command) {
+        return false;
+      }
+      const { dx, dy, wait } = command;
+      if (wait) {
+        pushMessage("Oliver pauses to listen to the vault.");
+        return true;
+      }
+      const targetX = state.player.x + dx;
+      const targetY = state.player.y + dy;
+      if (tileBlocked(targetX, targetY)) {
+        pushMessage("A radiant wall blocks the way.");
+        return false;
+      }
+      const foe = enemyAt(targetX, targetY);
+      if (foe) {
+        foe.hp -= 2;
+        pushMessage("Oliver strikes with luminous resolve!");
+        if (foe.hp <= 0) {
+          state.enemies = state.enemies.filter((enemy) => enemy !== foe);
+          state.player.coins += 2;
+          pushMessage("The foe dissolves into stardust.");
+        }
+        return true;
+      }
+      state.player.x = targetX;
+      state.player.y = targetY;
+      const item = pickupAt(targetX, targetY);
+      if (item) {
+        handlePickup(item);
+      }
+      if (state.player.x === state.exit.x && state.player.y === state.exit.y) {
+        state.depth += 1;
+        generateFloor(false);
+      }
+      return true;
+    }
+
+    function moveEnemy(enemy) {
+      const dx = state.player.x - enemy.x;
+      const dy = state.player.y - enemy.y;
+      const stepOptions = [];
+      if (Math.abs(dx) > Math.abs(dy)) {
+        stepOptions.push({ dx: Math.sign(dx), dy: 0 });
+        stepOptions.push({ dx: 0, dy: Math.sign(dy) });
+      } else {
+        stepOptions.push({ dx: 0, dy: Math.sign(dy) });
+        stepOptions.push({ dx: Math.sign(dx), dy: 0 });
+      }
+      stepOptions.push({ dx: -stepOptions[0].dx, dy: -stepOptions[0].dy });
+      stepOptions.push({ dx: -stepOptions[1]?.dx ?? 0, dy: -stepOptions[1]?.dy ?? 0 });
+
+      for (let i = 0; i < stepOptions.length; i += 1) {
+        const option = stepOptions[i];
+        const targetX = enemy.x + option.dx;
+        const targetY = enemy.y + option.dy;
+        if (targetX === state.player.x && targetY === state.player.y) {
+          state.player.hp -= enemy.damage;
+          state.damageFlash = 0.6;
+          pushMessage("An echo lashes out! Oliver endures.");
+          return;
+        }
+        if (tileBlocked(targetX, targetY)) {
+          continue;
+        }
+        if (enemyAt(targetX, targetY)) {
+          continue;
+        }
+        enemy.x = targetX;
+        enemy.y = targetY;
+        return;
+      }
+    }
+
+    function enemiesAct() {
+      state.enemies.forEach((enemy) => moveEnemy(enemy));
+      if (state.player.hp <= 0) {
+        pushMessage("Oliver's light fades... but hope reignites.");
+        state.run += 1;
+        state.depth = 1;
+        state.player.hp = state.player.maxHp;
+        state.player.coins = 0;
+        generateFloor(true);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < cols; x += 1) {
+          const px = x * cellSize;
+          const py = y * cellSize;
+          if (state.grid[y][x] === "floor") {
+            ctx.drawImage(floorSprite, px, py, cellSize, cellSize);
+          } else {
+            ctx.drawImage(wallSprite, px, py, cellSize, cellSize);
+          }
+        }
+      }
+
+      ctx.drawImage(exitSprite, state.exit.x * cellSize, state.exit.y * cellSize, cellSize, cellSize);
+
+      state.pickups.forEach((item) => {
+        const px = item.x * cellSize + cellSize * 0.15;
+        const py = item.y * cellSize + cellSize * 0.15;
+        const sprite = item.type === "coin" ? coinSprite : heartSprite;
+        ctx.drawImage(sprite, px, py);
+      });
+
+      const enemySprite = enemySpriteForDepth();
+      state.enemies.forEach((enemy) => {
+        const px = enemy.x * cellSize + cellSize * 0.12;
+        const py = enemy.y * cellSize + cellSize * 0.12;
+        ctx.drawImage(enemySprite, px, py);
+      });
+
+      const playerPx = state.player.x * cellSize + cellSize * 0.1;
+      const playerPy = state.player.y * cellSize + cellSize * 0.1;
+      if (state.damageFlash > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(getRaymondSprite("rgba(255,80,80,0.6)", cellSize * 0.9, cellSize * 0.9), playerPx, playerPy);
+        ctx.restore();
+      }
+      ctx.drawImage(playerSprite, playerPx, playerPy);
+    }
+
+    function update(dt) {
+      state.damageFlash = Math.max(0, state.damageFlash - dt);
+      const command = consumeInput();
+      if (command) {
+        const acted = handlePlayerTurn(command);
+        if (acted) {
+          enemiesAct();
+        }
+        updateScoreboard();
+      }
+    }
+
+    let last = performance.now();
+    function loop(timestamp) {
+      const delta = (timestamp - last) / 1000;
+      last = timestamp;
+      update(delta);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    generateFloor(true);
+    updateScoreboard();
+    requestAnimationFrame(loop);
   }
 }
