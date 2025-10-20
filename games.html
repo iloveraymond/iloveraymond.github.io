@@ -284,12 +284,9 @@
               <button class="arcade-button game-launcher" type="button" data-game-start="orbit">Play Oliver’s Orbit</button>
             </div>
           </div>
-          <div class="orbit-slider-bar">
-            <label class="orbit-slider">
-              Launch Speed
-              <input type="range" min="100" max="500" value="170" data-orbit-speed>
-            </label>
-          </div>
+          <p class="orbit-launch-guide">
+            Aim with A/D or ←/→ and tune thruster power with W/S or ↑/↓. Press space to launch the comet.
+          </p>
           <div class="orbit-hud" aria-live="polite">
             <div class="orbit-metrics">
               <p><span class="scoreboard__label">Stage:</span> <span data-orbit-stage>1</span></p>
@@ -305,11 +302,11 @@
               <button class="arcade-button" type="button" data-orbit-import>Load Layout</button>
               <input type="file" accept=".txt,application/json" data-orbit-import-input hidden>
             </div>
-            <p class="scoreboard__message" data-orbit-message>Position the planets, then press space to launch.</p>
+            <p class="scoreboard__message" data-orbit-message>Position the planets, aim with A/D or ←/→, tune power with W/S or ↑/↓, then press space to launch.</p>
             <p class="game-card__rules">
-              Controls: Drag planets to reposition them. Tap the space bar to launch the comet; collect every radiant
-              goal orb in sequence with a single run. Toggle static mode to prevent mid-flight adjustments if you prefer a
-              pure puzzle.
+              Controls: Aim with A/D or ←/→, adjust power with W/S or ↑/↓, and tap space to launch. Drag planets to
+              reposition them and collect every radiant goal orb in a single run. Toggle static mode to prevent mid-flight
+              adjustments if you prefer a pure puzzle.
             </p>
           </div>
         </div>

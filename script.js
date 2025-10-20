@@ -1953,11 +1953,13 @@ if (arcadeCanvases.length > 0) {
     const GOAL_RADIUS = Math.max(6, COMET_RADIUS - 6);
     const GRAVITY_CONSTANT = 5200;
     const SOFTENING = 5200;
-    const speedSlider = document.querySelector('[data-orbit-speed]');
-    let baseLaunchSpeed = Number(speedSlider?.value) || 170;
-    let maxSpeed = baseLaunchSpeed * 3;
-    const SLIDER_MIN = Number(speedSlider?.min ?? 100);
-    const SLIDER_MAX = Number(speedSlider?.max ?? 500);
+    const MIN_LAUNCH_SPEED = 120;
+    const MAX_LAUNCH_SPEED = 520;
+    const ANGLE_RATE = Math.PI * 0.9;
+    const SPEED_RATE = 240;
+    const MAX_COMET_SPEED = MAX_LAUNCH_SPEED * 3;
+    let baseLaunchSpeed = 170;
+    let launchAngle = 0;
 
     function clamp(value, min, max) {
       if (!Number.isFinite(value)) {
@@ -1972,6 +1974,14 @@ if (arcadeCanvases.length > 0) {
       }
       const factor = 10 ** decimals;
       return Math.round(value * factor) / factor;
+    }
+
+    function normalizeAngle(angle) {
+      if (!Number.isFinite(angle)) {
+        return 0;
+      }
+      const twoPi = Math.PI * 2;
+      return ((angle + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
     }
 
     const planetSprite = getRaymondSprite("rgba(249,168,38,0.35)", 120, 120);
@@ -2007,7 +2017,8 @@ if (arcadeCanvases.length > 0) {
         return {
           stage: Math.min(stage, highest),
           highest,
-          launchSpeed: Number.isFinite(parsed.launchSpeed) ? clamp(parsed.launchSpeed, SLIDER_MIN, SLIDER_MAX) : null,
+          launchSpeed: Number.isFinite(parsed.launchSpeed) ? clamp(parsed.launchSpeed, MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED) : null,
+          launchAngle: Number.isFinite(parsed.launchAngle) ? parsed.launchAngle : null,
           staticMode: typeof parsed.staticMode === "boolean" ? parsed.staticMode : null,
         };
       } catch (error) {
@@ -2020,26 +2031,16 @@ if (arcadeCanvases.length > 0) {
       highestStageUnlocked = Math.max(storedProgress.highest, stageNumber);
       if (storedProgress.launchSpeed !== null) {
         baseLaunchSpeed = storedProgress.launchSpeed;
-        maxSpeed = baseLaunchSpeed * 3;
+      }
+      if (storedProgress.launchAngle !== null) {
+        launchAngle = storedProgress.launchAngle;
       }
       if (storedProgress.staticMode !== null) {
         staticModeEnabled = storedProgress.staticMode;
       }
     }
-
-    if (speedSlider) {
-      speedSlider.value = String(baseLaunchSpeed);
-    }
-
-    if (speedSlider) {
-      speedSlider.addEventListener("input", () => {
-        const newSpeed = clamp(Number(speedSlider.value), SLIDER_MIN, SLIDER_MAX);
-        baseLaunchSpeed = newSpeed;
-        maxSpeed = baseLaunchSpeed * 3;
-        speedSlider.value = String(baseLaunchSpeed);
-        persistProgress();
-      });
-    }
+    baseLaunchSpeed = clamp(baseLaunchSpeed, MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED);
+    launchAngle = normalizeAngle(launchAngle);
 
     refreshStaticToggleLabel();
 
@@ -2144,6 +2145,7 @@ if (arcadeCanvases.length > 0) {
           stage: stageNumber,
           highestStage: highestStageUnlocked,
           launchSpeed: baseLaunchSpeed,
+          launchAngle,
           staticMode: staticModeEnabled,
         });
         localStorage.setItem(ORBIT_STORAGE_KEY, payload);
@@ -2226,10 +2228,16 @@ if (arcadeCanvases.length > 0) {
     }
 
     function captureOrbitLayout() {
+      const goalsSnapshot = (originalGoals.length ? originalGoals : goals).map((goal) => ({
+        x: roundTo(goal.x),
+        y: roundTo(goal.y),
+        radius: roundTo(goal.radius),
+      }));
       return {
         version: 1,
         stage: stageNumber,
         launchSpeed: roundTo(baseLaunchSpeed),
+        launchAngle: roundTo(normalizeAngle(launchAngle), 4),
         staticMode: staticModeEnabled,
         planets: planets.map((planet) => ({
           x: roundTo(planet.x),
@@ -2237,11 +2245,7 @@ if (arcadeCanvases.length > 0) {
           radius: roundTo(planet.radius),
           mass: roundTo(planet.mass),
         })),
-        goals: goals.map((goal) => ({
-          x: roundTo(goal.x),
-          y: roundTo(goal.y),
-          radius: roundTo(goal.radius),
-        })),
+        goals: goalsSnapshot,
       };
     }
 
@@ -2292,15 +2296,18 @@ if (arcadeCanvases.length > 0) {
       });
 
       const importedSpeed = Number(layout.launchSpeed);
-      const resolvedSpeed = Number.isFinite(importedSpeed) ? clamp(importedSpeed, SLIDER_MIN, SLIDER_MAX) : baseLaunchSpeed;
+      const resolvedSpeed = Number.isFinite(importedSpeed)
+        ? clamp(importedSpeed, MIN_LAUNCH_SPEED, MAX_LAUNCH_SPEED)
+        : baseLaunchSpeed;
+      const importedAngle = Number(layout.launchAngle);
+      const resolvedAngle = Number.isFinite(importedAngle)
+        ? normalizeAngle(importedAngle)
+        : launchAngle;
 
       stageNumber = layoutStage;
       highestStageUnlocked = Math.max(highestStageUnlocked, stageNumber);
       baseLaunchSpeed = resolvedSpeed;
-      maxSpeed = baseLaunchSpeed * 3;
-      if (speedSlider) {
-        speedSlider.value = String(baseLaunchSpeed);
-      }
+      launchAngle = normalizeAngle(resolvedAngle);
 
       if (typeof layout.staticMode === "boolean") {
         staticModeEnabled = layout.staticMode;
@@ -2314,6 +2321,7 @@ if (arcadeCanvases.length > 0) {
       originalGoals = goals.map((goal) => ({ ...goal }));
       launches = 0;
       resetComet();
+      hideVictoryOverlay();
       syncStageSelect();
       persistProgress();
       updateScoreboard(`Stage ${stageNumber}: custom layout loaded.`);
@@ -2426,6 +2434,7 @@ if (arcadeCanvases.length > 0) {
     }
 
     function startStage(targetStage) {
+      hideVictoryOverlay();
       stageNumber = Math.max(1, Math.floor(targetStage));
       highestStageUnlocked = Math.max(highestStageUnlocked, stageNumber);
       launches = 0;
@@ -2441,7 +2450,6 @@ if (arcadeCanvases.length > 0) {
 
     function advanceStage() {
       startStage(stageNumber + 1);
-      hideVictoryOverlay();
       updateScoreboard(`Stage ${stageNumber}: new gravity wells deployed.`);
     }
 
@@ -2546,8 +2554,8 @@ if (arcadeCanvases.length > 0) {
       }
       const speedMultiplier = 1 + (stageNumber - 1) * 0.08;
       const speed = baseLaunchSpeed * speedMultiplier;
-      comet.vx = speed;
-      comet.vy = 0;
+      comet.vx = Math.cos(launchAngle) * speed;
+      comet.vy = -Math.sin(launchAngle) * speed;
       comet.launched = true;
       launches += 1;
       updateScoreboard();
@@ -2566,6 +2574,40 @@ if (arcadeCanvases.length > 0) {
 
       if (!comet) {
         resetComet();
+      }
+
+      if (comet && !comet.launched) {
+        let vectorChanged = false;
+        const angleDelta = ANGLE_RATE * dt;
+        const speedDelta = SPEED_RATE * dt;
+
+        const leftPressed = keyState.has("arrowleft") || keyState.has("a");
+        const rightPressed = keyState.has("arrowright") || keyState.has("d");
+        if (leftPressed !== rightPressed) {
+          const nextAngle = normalizeAngle(launchAngle + (leftPressed ? angleDelta : -angleDelta));
+          if (Math.abs(nextAngle - launchAngle) > 1e-4) {
+            launchAngle = nextAngle;
+            vectorChanged = true;
+          }
+        }
+
+        const upPressed = keyState.has("arrowup") || keyState.has("w");
+        const downPressed = keyState.has("arrowdown") || keyState.has("s");
+        if (upPressed !== downPressed) {
+          const nextSpeed = clamp(
+            baseLaunchSpeed + (upPressed ? speedDelta : -speedDelta),
+            MIN_LAUNCH_SPEED,
+            MAX_LAUNCH_SPEED
+          );
+          if (Math.abs(nextSpeed - baseLaunchSpeed) > 1e-4) {
+            baseLaunchSpeed = nextSpeed;
+            vectorChanged = true;
+          }
+        }
+
+        if (vectorChanged) {
+          persistProgress();
+        }
       }
 
       if (comet.launched) {
@@ -2603,8 +2645,8 @@ if (arcadeCanvases.length > 0) {
           comet.vx += ax * stepDt;
           comet.vy += ay * stepDt;
 
-          comet.vx = Math.max(-maxSpeed, Math.min(maxSpeed, comet.vx));
-          comet.vy = Math.max(-maxSpeed, Math.min(maxSpeed, comet.vy));
+          comet.vx = Math.max(-MAX_COMET_SPEED, Math.min(MAX_COMET_SPEED, comet.vx));
+          comet.vy = Math.max(-MAX_COMET_SPEED, Math.min(MAX_COMET_SPEED, comet.vy));
 
           comet.x += comet.vx * stepDt;
           comet.y += comet.vy * stepDt;
@@ -2645,7 +2687,7 @@ if (arcadeCanvases.length > 0) {
 
     function draw() {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = createPattern(ctx, 28, "rgba(58,80,107,0.15)");
+      ctx.fillStyle = createPattern(ctx, 56, "rgba(12,18,36,0.55)");
       ctx.fillRect(0, 0, width, height);
 
       goals.forEach((goal) => {
@@ -2661,6 +2703,38 @@ if (arcadeCanvases.length > 0) {
       ctx.beginPath();
       ctx.arc(launchPoint.x, launchPoint.y, 24, 0, Math.PI * 2);
       ctx.stroke();
+
+      if (comet && !comet.launched) {
+        const normalizedPower =
+          (baseLaunchSpeed - MIN_LAUNCH_SPEED) / Math.max(1, MAX_LAUNCH_SPEED - MIN_LAUNCH_SPEED);
+        const indicatorLength = 80 + normalizedPower * 140;
+        const dirX = Math.cos(launchAngle);
+        const dirY = -Math.sin(launchAngle);
+        const endX = launchPoint.x + dirX * indicatorLength;
+        const endY = launchPoint.y + dirY * indicatorLength;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(249,168,38,0.85)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(launchPoint.x, launchPoint.y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(endX, endY);
+        ctx.rotate(Math.atan2(dirY, dirX));
+        ctx.fillStyle = "rgba(249,168,38,0.9)";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-16, 7);
+        ctx.lineTo(-16, -7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.restore();
+      }
 
       if (comet && comet.trail.length > 1) {
         ctx.strokeStyle = "rgba(255,255,255,0.4)";
@@ -2683,7 +2757,7 @@ if (arcadeCanvases.length > 0) {
     });
 
     startStage(stageNumber);
-    updateScoreboard("Position the planets, then press space to launch.");
+    updateScoreboard("Position the planets, aim with A/D or ←/→, tune power with W/S or ↑/↓, then press space to launch.");
 
     let last = performance.now();
     function loop(timestamp) {
